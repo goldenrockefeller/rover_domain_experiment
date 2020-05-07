@@ -171,7 +171,7 @@ cdef class EvolvingSystemWithNoveltySearch(DefaultEvolvingSystem):
         closest_node = (
             impl_closest_novelty_node(state_action, self.novelty_nodes, None))
 
-        novelty_score = -impl_sqr_dist(state_action, closest_node.loc)
+        novelty_score = impl_sqr_dist(state_action, closest_node.loc)
 
         closest_node.n_nearby_state_actions += 1
 

@@ -21,7 +21,7 @@ def trial_setup():
     n_req = 3
     n_rovers = 15
     n_pois = 4
-    prints_score = True
+    prints_score = False
     
     max_n_epochs = 5000  # HERE
     n_steps = 50

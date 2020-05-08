@@ -97,6 +97,7 @@ cdef class NoveltyNode:
 @cython.auto_pickle(True)
 cdef class EvolvingSystemWithNoveltySearch(DefaultEvolvingSystem):
     cdef public list novelty_nodes
+    cdef public list best_nodes
     cdef public bint using_action
 
     def __init__(self, n_state_action_dims, n_novelty_nodes, using_action):
@@ -106,12 +107,14 @@ cdef class EvolvingSystemWithNoveltySearch(DefaultEvolvingSystem):
         self.using_action = using_action
 
         self.novelty_nodes = [None] * cy_n_novelty_nodes
+        self.best_nodes = [None] * cy_n_novelty_nodes
 
         for node_id in range(cy_n_novelty_nodes):
             self.novelty_nodes[node_id] = (
                 NoveltyNode(
                     DoubleArray(
                         np_random_uniform(-1., 1., n_state_action_dims) )))
+            self.best_nodes[node_id] = self.novelty_nodes[node_id]
 
         init_DefaultEvolvingSystem(self)
 
@@ -169,9 +172,12 @@ cdef class EvolvingSystemWithNoveltySearch(DefaultEvolvingSystem):
                 state_action.view[i + observation_size] = 0.0
 
         closest_node = (
-            impl_closest_novelty_node(state_action, self.novelty_nodes, None))
+            impl_closest_novelty_node(state_action, self.best_nodes, None))
 
         novelty_score = impl_sqr_dist(state_action, closest_node.loc)
+
+        closest_node = (
+            impl_closest_novelty_node(state_action, self.novelty_nodes, None))
 
         closest_node.n_nearby_state_actions += 1
 
@@ -222,6 +228,9 @@ cpdef double impl_sqr_dist(DoubleArray x, DoubleArray y) except *:
 
     return sqr_dist
 
+def novelty_score_for_Phenotype(PhenotypeWithNoveltyScore phenotype):
+    return phenotype.novelty_score
+
 @cython.warn.undeclared(True)
 cpdef void update_phenotypes(
         EvolvingSystemWithNoveltySearch system
@@ -232,8 +241,10 @@ cpdef void update_phenotypes(
     cdef list extra_phenotypes
     cdef list phenotypes
     cdef list survivors
+    cdef list super_fit
     cdef list super_fit_children
     cdef list novel_phenotypes
+    cdef list fit_novel
     cdef list fit_novel_children
     cdef Py_ssize_t match_id
     cdef PhenotypeWithNoveltyScore extra_phenotype
@@ -276,6 +287,7 @@ cpdef void update_phenotypes(
 
     # Get fittest children from survivors.
     super_fit_children = [None] * (n_phenotypes//4)
+    super_fit = [None] * (n_phenotypes//4)
 
     for match_id in range(n_phenotypes//4):
         # Find the match winner amongst contenders.
@@ -284,30 +296,25 @@ cpdef void update_phenotypes(
         fitness_a = contender_a.fitness()
         fitness_b = contender_b.fitness()
         if fitness_a > fitness_b:
+            super_fit[match_id] = contender_a
             super_fit_children[match_id] = contender_a.child()
         else:
+            super_fit[match_id] = contender_b
             super_fit_children[match_id] = contender_b.child()
 
 
     # Get novel phenotypes.
     # TODO Optimize random shuffle with non-python random shuffle.
-    random_shuffle(phenotypes)
+    phenotypes.sort(reverse = True, key = novelty_score_for_Phenotype)
 
     novel_phenotypes = [None] * (n_phenotypes//2)
 
     for match_id in range(n_phenotypes// 2):
-        # Find the match winner amongst contenders.
-        contender_a = phenotypes[2 * match_id]
-        contender_b = phenotypes[2 * match_id + 1]
-        novelty_score_a = contender_a.novelty_score
-        novelty_score_b = contender_b.novelty_score
-        if novelty_score_a > novelty_score_b:
-            novel_phenotypes[match_id] = contender_a
-        else:
-            novel_phenotypes[match_id] = contender_b
+        novel_phenotypes[match_id] = phenotypes[match_id]
 
     # Get fit novel children.
     fit_novel_children = [None] * (n_phenotypes//4)
+    fit_novel = [None] * (n_phenotypes//4)
 
     for match_id in range(n_phenotypes//4):
         # Find the match winner amongst contenders.
@@ -316,16 +323,19 @@ cpdef void update_phenotypes(
         fitness_a = contender_a.fitness()
         fitness_b = contender_b.fitness()
         if fitness_a > fitness_b:
+            fit_novel[match_id] = contender_a.copy()
             fit_novel_children[match_id] = contender_a.child()
         else:
+            fit_novel[match_id] = contender_b.copy()
             fit_novel_children[match_id] = contender_b.child()
 
     # Grow list back to population size and then shuffle
     # We shuffle so that it isn't predictable what the phenotype is good at.
     phenotypes = []
-    phenotypes.extend(survivors)
-    phenotypes.extend(fit_novel_children)
+    phenotypes.extend(super_fit)
     phenotypes.extend(super_fit_children)
+    phenotypes.extend(fit_novel)
+    phenotypes.extend(fit_novel_children)
     phenotypes.extend(extra_phenotypes)
 
     # TODO Optimize random shuffle with non-python random shuffle.
@@ -384,36 +394,41 @@ cpdef void update_novelty_nodes(
 
 
     # Nodes must be far away from other nodes.
-    for node in new_nodes:
-        closest_node = impl_closest_novelty_node(node.loc, new_nodes, node)
-        node.closest_other_node = closest_node
-        node.sqr_dist_to_closest_other_node = (
-            impl_sqr_dist(node.loc, closest_node.loc))
-    #
-    for node_id in range(n_nodes//4):
-        new_nodes.sort(
-            reverse = True,
-            key = sqr_dist_to_closest_other_node_for_NoveltyNode)
-        non_surviving_node = new_nodes.pop()
-        for node in new_nodes:
-            if node.closest_other_node is non_surviving_node:
-                closest_node = (
-                    impl_closest_novelty_node(node.loc, new_nodes, node))
-                node.closest_other_node = closest_node
-                node.sqr_dist_to_closest_other_node = (
-                    impl_sqr_dist(node.loc, closest_node.loc))
+    # for node in new_nodes:
+    #     closest_node = impl_closest_novelty_node(node.loc, new_nodes, node)
+    #     node.closest_other_node = closest_node
+    #     node.sqr_dist_to_closest_other_node = (
+    #         impl_sqr_dist(node.loc, closest_node.loc))
+    # #
+    # for node_id in range(n_nodes//4):
+    #     new_nodes.sort(
+    #         reverse = True,
+    #         key = sqr_dist_to_closest_other_node_for_NoveltyNode)
+    #     non_surviving_node = new_nodes.pop()
+    #     for node in new_nodes:
+    #         if node.closest_other_node is non_surviving_node:
+    #             closest_node = (
+    #                 impl_closest_novelty_node(node.loc, new_nodes, node))
+    #             node.closest_other_node = closest_node
+    #             node.sqr_dist_to_closest_other_node = (
+    #                 impl_sqr_dist(node.loc, closest_node.loc))
 
     # Repopulate Nodes
     parent_nodes = [None] * len(new_nodes)
+    system.best_nodes = [None] * len(new_nodes)
     for node_id in range(len(new_nodes)):
         parent_nodes[node_id] = new_nodes[node_id]
+        system.best_nodes[node_id] = new_nodes[node_id]
     #
-    for node_id in range(n_nodes - n_nodes//4):
+    for node_id in range(n_nodes - len(new_nodes)):
         random_shuffle(parent_nodes)
         parent_a = parent_nodes[0]
         parent_b = parent_nodes[1]
         parent_c = parent_nodes[2]
         new_nodes.append(child_of_NoveltyNodes(parent_a, parent_b, parent_c))
+
+    system.novelty_nodes = new_nodes
+
 
 @cython.warn.undeclared(True)
 cpdef NoveltyNode child_of_NoveltyNodes(

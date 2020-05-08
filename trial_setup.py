@@ -17,11 +17,11 @@ import numpy as np
 
 def trial_setup():
     arg_dict = {}
-    experiment_name = "Novelty_n_req_3" 
-    n_req = 3
+    experiment_name = "Novelty_n_req_5_Testing" 
+    n_req = 5
     n_rovers = 15
     n_pois = 4
-    prints_score = False
+    prints_score = True
     
     max_n_epochs = 5000  # HERE
     n_steps = 50
@@ -111,7 +111,7 @@ def novelty(arg_dict):
         new_system = (
             EvolvingSystemWithNoveltySearch(
                 n_state_action_dims = arg_dict["n_state_action_dims"], 
-                n_novelty_nodes = 60, 
+                n_novelty_nodes = 120, 
                 using_action = False))
         
         new_system.set_max_n_epochs(old_system.max_n_epochs())

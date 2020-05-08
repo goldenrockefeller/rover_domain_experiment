@@ -17,11 +17,12 @@ import numpy as np
 
 def trial_setup():
     arg_dict = {}
-    experiment_name = "Novelty_n_req_5_Testing" 
+    experiment_name = "Novelty_n_poi_1_n_req_5_bpv_20" 
     n_req = 5
     n_rovers = 15
-    n_pois = 4
-    prints_score = True
+    base_poi_value = 20.
+    n_pois = 1
+    prints_score = False
     
     max_n_epochs = 5000  # HERE
     n_steps = 50
@@ -46,6 +47,7 @@ def trial_setup():
     domain.poi_init_thickness = 0.
     domain.setup_size = 30. # HERE
     domain.poi_value_init_type = "sequential"
+    domain.base_poi_value = base_poi_value
 
     # Muliagent System
     n_policies_per_agent = 50

@@ -16,6 +16,7 @@ cdef class TrialRoverDomain(BaseDomain):
     cdef public double setup_size
     cdef public double poi_init_thickness
     cdef public object poi_value_init_type
+    cdef public double base_poi_value
 
     def __init__(self):
         self.super_domain = RoverDomain()
@@ -77,9 +78,9 @@ cdef class TrialRoverDomain(BaseDomain):
 
             # Set POI values as the 1, 2, 3, ... sequence.
             if self.poi_value_init_type  == "sequential":
-                poi_datum.set_value(1. * (poi_id + 1.))
+                poi_datum.set_value(base_poi_value * (poi_id + 1.))
             elif self.poi_value_init_type == "same":
-                poi_datum.set_value(1.)
+                poi_datum.set_value(base_poi_value)
             else:
                 raise ValueError(
                     "POI value initialization type (poi_value_init_type) not "

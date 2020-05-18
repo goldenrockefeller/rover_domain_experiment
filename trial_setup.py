@@ -13,11 +13,13 @@ from novelty import PhenotypeWithNoveltyScore
 
 from trial_rover_domain import TrialRoverDomain
 
+from cauchy_phenotype import CauchyPhenotype
+
 import numpy as np
 
 def trial_setup():
     arg_dict = {}
-    experiment_name = "Novelty_n_poi_1_n_req_5_bpv_20" 
+    experiment_name = "new_mutation" 
     n_req = 5
     n_rovers = 15
     base_poi_value = 20.
@@ -129,5 +131,53 @@ def novelty(arg_dict):
             phenotype.set_mutation_factor(old_phenotype.mutation_factor())
             
             new_system.append_phenotype (phenotype)
+            
+def new_mutation(factor):            
+    def new_mutation_x(arg_dict):
+        domain = arg_dict["trial"].domain 
+        super_domain = domain.super_domain
+        n_rovers = super_domain.setting_state().n_rovers()
+        
+        max_n_epochs = 5000  # HERE
+        
+        n_state_dims = (
+            2 * super_domain.rover_observations_calculator().n_observation_sections())
+        n_action_dims = 2
+        
+        n_policies_per_agent = 50
+        n_policy_hidden_neurons = 32
+        
+        multiagent_system = MultiagentSystem()
+        for rover_id in range(n_rovers):
+            agent_system = DefaultEvolvingSystem()
+            agent_system.set_max_n_epochs(max_n_epochs)
+            multiagent_system.append_agent_system(agent_system)
+            for policy_id in range(n_policies_per_agent):
+                phenotype = (
+                    CauchyPhenotype(
+                        NeuroPolicy(
+                            ReluTanh(
+                                n_state_dims,
+                                n_policy_hidden_neurons,
+                                n_action_dims ))))
+                                
+                phenotype.set_mutation_factor(factor)
+                
+                agent_system.append_phenotype (phenotype)
+        
+        arg_dict["trial"].system = multiagent_system
+                
+    new_mutation_x.__name__ = "new_mutation_{0}".format(factor)
+    return new_mutation_x
 
-#     
+def new_setup(n_rovers, n_pois, n_req, bpv):            
+    def new_setup_x(arg_dict):
+        domain = arg_dict["trial"].domain 
+        domain.set_n_rovers(n_rovers)
+        domain.set_n_pois(n_pois)
+        domain.super_domain.evaluator().set_n_req(n_req)
+        domain.base_poi_value = bpv
+                
+    new_setup_x.__name__ = (
+        "new_setup_{0}_{1}_{2}_{3}".format(n_rovers, n_pois, n_req, bpv))
+    return new_setup_x

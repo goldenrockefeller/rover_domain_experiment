@@ -20,7 +20,7 @@ mods_to_mix = [
     new_setup(1, 1, 1, 1.),
     new_setup(15, 4, 3, 1.)    
     ),
-    (new_mutation(0.1), new_mutation(0.01), new_mutation(0.001))
+    (new_mutation(1.), new_mutation(10.), new_mutation(100.))
 
 ]
 

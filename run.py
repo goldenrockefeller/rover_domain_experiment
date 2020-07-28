@@ -14,14 +14,8 @@ experiment_name = experiment_arg_dict["trial"].experiment_name
 n_stat_runs = 1
 
 mods_to_mix = [
-    (global_reward, difference_reward),
-    (
-    new_setup(15, 1, 5, 20.),
-    new_setup(1, 1, 1, 1.),
-    new_setup(15, 4, 3, 1.)    
-    ),
-    (new_mutation(1000.), new_mutation(10000.), new_mutation(100000.))
-
+    (global_reward,),
+    (none, fitness_critic)
 ]
 
 active_mod_combos = list(itertools.product(*mods_to_mix))

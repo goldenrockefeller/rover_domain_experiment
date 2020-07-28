@@ -4,6 +4,7 @@ from rockefeg.policyopt.domain cimport BaseDomain
 from rockefeg.roverdomain.rover_domain cimport RoverDomain
 from rockefeg.roverdomain.state cimport State, RoverDatum, PoiDatum
 from rockefeg.cyutil.array cimport DoubleArray
+from rockefeg.cyutil.typed_list cimport TypedList, new_TypedList
 
 from rockefeg.roverdomain.rover_domain import RoverDomain
 
@@ -27,28 +28,33 @@ cdef class TrialRoverDomain(BaseDomain):
     cpdef void set_n_rovers(self, Py_ssize_t n_rovers) except *:
         cdef State setting_state
         cdef Py_ssize_t i
-        cdef list rover_data
+        cdef list rover_data_list
+        cdef TypedList rover_data
 
         setting_state = self.super_domain.setting_state()
 
-        rover_data = [None] * n_rovers
+        rover_data_list = [None] * n_rovers
 
         for i in range(n_rovers):
-            rover_data[i] = RoverDatum()
-        setting_state.set_rover_data(rover_data)
+            rover_data_list[i] = RoverDatum()
+        rover_data = setting_state.rover_data()
+        rover_data.set_items(rover_data_list)
 
     cpdef void set_n_pois(self, Py_ssize_t n_pois) except *:
         cdef State setting_state
         cdef Py_ssize_t i
-        cdef list poi_data
+        cdef list poi_data_list
+        cdef TypedList poi_data
 
         setting_state = self.super_domain.setting_state()
 
-        poi_data = [None] * n_pois
+        poi_data_list = [None] * n_pois
 
         for i in range(n_pois):
-            poi_data[i] = PoiDatum()
-        setting_state.set_poi_data(poi_data)
+            poi_data_list[i] = PoiDatum()
+
+        poi_data = setting_state.poi_data()
+        poi_data.set_items(poi_data_list)
 
     cpdef copy(self, copy_obj = None):
         raise NotImplementedError
@@ -65,7 +71,7 @@ cdef class TrialRoverDomain(BaseDomain):
 
         # Place POIs radially.
         poi_id = 0
-        for poi_datum in setting_state.poi_data_shallow_copy():
+        for poi_datum in setting_state.poi_data():
             poi_position = np.zeros((2))
             angle = np.random.uniform(-np.pi, np.pi)
             min_radius = (1. - self.poi_init_thickness) * 0.5 * self.setup_size
@@ -89,7 +95,7 @@ cdef class TrialRoverDomain(BaseDomain):
             poi_id += 1
 
 
-        for rover_datum in setting_state.rover_data_shallow_copy():
+        for rover_datum in setting_state.rover_data():
             # Place rovers radially.
             rover_position = np.zeros((2))
             angle = np.random.uniform(-np.pi, np.pi)
@@ -112,10 +118,17 @@ cdef class TrialRoverDomain(BaseDomain):
         self.super_domain.reset()
 
     cpdef observation(self):
-        return self.super_domain.rover_observations()
+        cdef TypedList observations
+
+        observations = self.super_domain.rover_observations()
+
+        return observations.items_shallow_copy()
 
     cpdef void step(self, action) except *:
-        cdef object joint_action = action
+        cdef TypedList joint_action
+
+        joint_action = new_TypedList(DoubleArray)
+        joint_action.set_items(action)
 
         self.super_domain.step(joint_action)
 

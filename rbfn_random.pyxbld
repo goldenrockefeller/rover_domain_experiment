@@ -1,18 +1,25 @@
 from Cython.Build import cythonize
 import numpy
-from os.path import join
+from os.path import join, dirname
 import numpy as np
 
 lib_path = join(np.get_include(), '..', '..', 'random', 'lib')
 
 def make_ext(modname, pyxfilename):
+    random_include = dirname(pyxfilename)
+    random_cpp = join(random_include, "random_normal_mt19937_64.cpp")
     return cythonize(
         pyxfilename,
         language_level = 3,
         annotate = True,
         aliases = {
-            'NP_INCLUDE' : numpy.get_include(),
-            'NP_RANDOM_PATH' : lib_path,
-            'NP_RANDOM_LIB' : 'npyrandom'}
+            'RANDOM_CPP': random_cpp,
+            'RANDOM_INCLUDE': 'random_include'}
     )[0]
 
+# aliases = {
+#     'NP_INCLUDE' : numpy.get_include(),
+#     'NP_RANDOM_PATH' : lib_path,
+#     'NP_RANDOM_LIB' : 'npyrandom',
+#     'RANDOM_CPP': random_cpp,
+#     'RANDOM_INCLUDE': 'random_include'}

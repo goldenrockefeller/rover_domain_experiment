@@ -30,8 +30,8 @@ import numpy as np
 
 def trial_setup():
     arg_dict = {}
-    experiment_name = "test_nreq_3" 
-    n_req = 3
+    experiment_name = "AAMAS_2021_nreq_6" 
+    n_req = 6
     n_rovers = 15
     base_poi_value = 1.
     n_pois = 4
@@ -215,6 +215,50 @@ def rbfn_fitness_critic(arg_dict):
         intermediate_critic.epsilon = 1e-9
                 
         agent_systems.set_item(rover_id, fitness_critic_system)
+        
+def rbfn_fitness_critic_noisier(arg_dict):
+    multiagent_system = arg_dict["trial"].system
+    
+    agent_systems = multiagent_system.agent_systems()
+    
+    for rover_id in range(len(agent_systems)):
+        evolving_system = agent_systems.item(rover_id)
+        
+        
+        n_centers = 160
+        rbfn = Rbfn(10, n_centers, 1)
+        
+        intermediate_critic = RbfnApproximator(rbfn)
+        
+        fitness_critic_system = (
+            MeanFitnessCriticSystem(
+                evolving_system,
+                intermediate_critic))
+                
+        fitness_critic_system.trajectory_buffer().set_capacity(50)
+        fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
+        fitness_critic_system.set_n_trajectories_per_critic_update_batch(1)
+        
+        locations = np.random.uniform(
+            [0., 0., 0., 0., 0., 0., 0., 0., -0.8, -0.8], 
+            [5., 5., 5., 5., 5., 5., 5., 5., 0.8, 0.8],
+            size = (n_centers, 10))
+        
+        intermediate_critic.set_center_locations(locations)
+        intermediate_critic.set_uncertainties(DoubleArray(1e8 * np.ones(n_centers))) # HERE
+        intermediate_critic.set_values(DoubleArray(1e3 * np.ones(n_centers)))
+        intermediate_critic.set_counters(DoubleArray(1 * np.ones(n_centers)))
+        
+        intermediate_critic.scale_multiplier = 1.
+        intermediate_critic.discount_factor = 0.999
+        intermediate_critic.exploration_incentive_factor = 1. # HERE
+        intermediate_critic.exploration_sampling_factor = 1.
+        intermediate_critic.process_uncertainty_rate = 0.001
+        intermediate_critic.center_relocalization_rate = 0.
+        intermediate_critic.epsilon = 1e-9
+                
+        agent_systems.set_item(rover_id, fitness_critic_system)
+        
         
 def rbfn_fitness_critic_0(arg_dict):
     multiagent_system = arg_dict["trial"].system

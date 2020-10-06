@@ -1,4 +1,5 @@
-#pragma once
+#ifndef RANDOM_NORMAL_MT19937_64_HPP
+#define RANDOM_NORMAL_MT19937_64_HPP
 
 #include <random>
 
@@ -10,3 +11,5 @@ public:
     RandomNormal();
     double get();
 };
+
+#endif

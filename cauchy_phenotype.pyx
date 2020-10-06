@@ -2,7 +2,7 @@ cimport cython
 
 from rockefeg.policyopt.evolution cimport DefaultPhenotype
 from rockefeg.policyopt.evolution cimport init_DefaultPhenotype
-from rockefeg.policyopt.policy cimport BasePolicy
+from rockefeg.policyopt.map cimport BaseMap
 from rockefeg.cyutil.array cimport DoubleArray
 
 import numpy as np
@@ -29,7 +29,7 @@ cdef class CauchyPhenotype(DefaultPhenotype):
 
     cpdef void mutate(self, args = None) except *:
 
-        cdef BasePolicy policy
+        cdef BaseMap policy
         cdef DoubleArray parameters
         cdef object mutation
         cdef Py_ssize_t param_id
@@ -37,7 +37,7 @@ cdef class CauchyPhenotype(DefaultPhenotype):
         cdef double mutation_step
 
         # TODO Optimize, getting mutation vector is done through python (numpy).
-        policy = <BasePolicy?>self.policy()
+        policy = <BaseMap?>self.policy()
 
         parameters = <DoubleArray?> policy.parameters()
 

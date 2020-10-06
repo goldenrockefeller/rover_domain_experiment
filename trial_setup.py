@@ -30,12 +30,12 @@ import numpy as np
 
 def trial_setup():
     arg_dict = {}
-    experiment_name = "AAMAS_2021_nreq_5" 
-    n_req = 5
+    experiment_name = "test_nreq_3" 
+    n_req = 3
     n_rovers = 15
     base_poi_value = 1.
     n_pois = 4
-    prints_score = False 
+    prints_score = True 
     
     max_n_epochs = 5000  # HERE
     n_steps = 50
@@ -198,19 +198,19 @@ def rbfn_fitness_critic(arg_dict):
         
         locations = np.random.uniform(
             [0., 0., 0., 0., 0., 0., 0., 0., -0.8, -0.8], 
-            [15., 15., 15., 15., 5., 5., 5., 5., 0.8, 0.8],
+            [5., 5., 5., 5., 5., 5., 5., 5., 0.8, 0.8],
             size = (n_centers, 10))
         
         intermediate_critic.set_center_locations(locations)
-        intermediate_critic.set_uncertainties(DoubleArray(100. * np.ones(n_centers))) # HERE
-        intermediate_critic.set_values(DoubleArray(10. * np.ones(n_centers)))
+        intermediate_critic.set_uncertainties(DoubleArray(1e8 * np.ones(n_centers))) # HERE
+        intermediate_critic.set_values(DoubleArray(1e3 * np.ones(n_centers)))
         intermediate_critic.set_counters(DoubleArray(1 * np.ones(n_centers)))
         
         intermediate_critic.scale_multiplier = 1.
-        intermediate_critic.discount_factor = 0.99
+        intermediate_critic.discount_factor = 0.999
         intermediate_critic.exploration_incentive_factor = 1. # HERE
         intermediate_critic.exploration_sampling_factor = 1.
-        intermediate_critic.process_uncertainty_rate = 0.001
+        intermediate_critic.process_uncertainty_rate = 0.0001
         intermediate_critic.center_relocalization_rate = 0.
         intermediate_critic.epsilon = 1e-9
                 
@@ -241,19 +241,19 @@ def rbfn_fitness_critic_0(arg_dict):
         
         locations = np.random.uniform(
             [0., 0., 0., 0., 0., 0., 0., 0., -0.8, -0.8], 
-            [15., 15., 15., 15., 5., 5., 5., 5., 0.8, 0.8],
+            [5., 5., 5., 5., 5., 5., 5., 5., 0.8, 0.8],
             size = (n_centers, 10))
         
         intermediate_critic.set_center_locations(locations)
-        intermediate_critic.set_uncertainties(DoubleArray(100. * np.ones(n_centers))) # HERE
-        intermediate_critic.set_values(DoubleArray(10. * np.ones(n_centers)))
+        intermediate_critic.set_uncertainties(DoubleArray(1e8 * np.ones(n_centers))) # HERE
+        intermediate_critic.set_values(DoubleArray(1e3 * np.ones(n_centers)))
         intermediate_critic.set_counters(DoubleArray(1 * np.ones(n_centers)))
         
         intermediate_critic.scale_multiplier = 1.
-        intermediate_critic.discount_factor = 0.99
+        intermediate_critic.discount_factor = 0.999
         intermediate_critic.exploration_incentive_factor = 0. # HERE
         intermediate_critic.exploration_sampling_factor = 0.
-        intermediate_critic.process_uncertainty_rate = 0.001
+        intermediate_critic.process_uncertainty_rate = 0.0001
         intermediate_critic.center_relocalization_rate = 0.
         intermediate_critic.epsilon = 1e-9
                 

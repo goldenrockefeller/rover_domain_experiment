@@ -1,12 +1,12 @@
 # distutils: language = c++
 # distutils: include_dirs = RANDOM_INCLUDE
 # distutils: sources = RANDOM_CPP
+# distutils: extra_compile_args = -std=c++11
 
 # disls: libraries = NP_RANDOM_LIB
 # ditls: include_dirs = NP_INCLUDE RANDOM_INCLUDE
 # diils: library_dirs = NP_RANDOM_PATH
 # dils: sources = RANDOM_CPP
-
 
 
 # import numpy as np

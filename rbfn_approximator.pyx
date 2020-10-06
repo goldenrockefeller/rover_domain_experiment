@@ -1,4 +1,5 @@
 # distutils: language = c++
+# distutils: extra_compile_args = -mavx2 -mfma -ftree-vectorize
 
 cimport cython
 from rockefeg.policyopt.function_approximation cimport BaseFunctionApproximator, TargetEntry

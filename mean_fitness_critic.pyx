@@ -76,7 +76,7 @@ cdef class MeanFitnessCriticSystem(FitnessCriticSystem):
                     intermediate_critic.batch_update(target_entries)
 
             eval = intermediate_critic.eval(experience)
-            print("Estimate: ", eval.view[0])
+            #print("Estimate: ", eval.view[0])
 
 
         system = self.super_system()

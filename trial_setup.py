@@ -30,12 +30,12 @@ import numpy as np
 
 def trial_setup():
     arg_dict = {}
-    experiment_name = "AAMAS_2021_nreq_5" 
-    n_req = 5
+    experiment_name = "AAMAS_2021_nreq_4" 
+    n_req = 4
     n_rovers = 15
     base_poi_value = 1.
     n_pois = 4
-    prints_score = True 
+    prints_score = False 
     
     max_n_epochs = 5000  # HERE
     n_steps = 50

@@ -35,7 +35,7 @@ def trial_setup():
     n_rovers = 15
     base_poi_value = 1.
     n_pois = 4
-    prints_score = True 
+    prints_score = False 
     
     max_n_epochs = 5000  # HERE
     n_steps = 50

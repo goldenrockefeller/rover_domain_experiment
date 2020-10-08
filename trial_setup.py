@@ -202,16 +202,16 @@ def my_rbfn_fitness_critic(arg_dict):
             size = (n_centers, 10))
             
         scalings = np.zeros( (n_centers, 10))
-        scalings[center_id, 0] = 1./15.
-        scalings[center_id, 1] = 1./15.
-        scalings[center_id, 2] = 1./15.
-        scalings[center_id, 3] = 1./15.
-        scalings[center_id, 4] = 1./5.
-        scalings[center_id, 5] = 1./5.
-        scalings[center_id, 6] = 1./5.
-        scalings[center_id, 7] = 1./5.
-        scalings[center_id, 8] = 1./0.8
-        scalings[center_id, 9] = 1./0.8
+        scalings[:, 0] = 1./15.
+        scalings[:, 1] = 1./15.
+        scalings[:, 2] = 1./15.
+        scalings[:, 3] = 1./15.
+        scalings[:, 4] = 1./5.
+        scalings[:, 5] = 1./5.
+        scalings[:, 6] = 1./5.
+        scalings[:, 7] = 1./5.
+        scalings[:, 8] = 1./0.8
+        scalings[:, 9] = 1./0.8
         
         intermediate_critic.set_center_locations(locations)
         intermediate_critic.set_center_scalings(scalings)
@@ -258,16 +258,16 @@ def my_rbfn_fitness_critic_0(arg_dict):
             size = (n_centers, 10))
             
         scalings = np.zeros( (n_centers, 10))
-        scalings[center_id, 0] = 1./15.
-        scalings[center_id, 1] = 1./15.
-        scalings[center_id, 2] = 1./15.
-        scalings[center_id, 3] = 1./15.
-        scalings[center_id, 4] = 1./5.
-        scalings[center_id, 5] = 1./5.
-        scalings[center_id, 6] = 1./5.
-        scalings[center_id, 7] = 1./5.
-        scalings[center_id, 8] = 1./0.8
-        scalings[center_id, 9] = 1./0.8
+        scalings[:, 0] = 1./15.
+        scalings[:, 1] = 1./15.
+        scalings[:, 2] = 1./15.
+        scalings[:, 3] = 1./15.
+        scalings[:, 4] = 1./5.
+        scalings[:, 5] = 1./5.
+        scalings[:, 6] = 1./5.
+        scalings[:, 7] = 1./5.
+        scalings[:, 8] = 1./0.8
+        scalings[:, 9] = 1./0.8
         
         intermediate_critic.set_center_locations(locations)
         intermediate_critic.set_center_scalings(scalings)

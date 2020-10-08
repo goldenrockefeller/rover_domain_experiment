@@ -30,8 +30,8 @@ import numpy as np
 
 def trial_setup():
     arg_dict = {}
-    experiment_name = "AAMAS_2021_nreq_4" 
-    n_req = 4
+    experiment_name = "AAMAS_2021_nreq_6" 
+    n_req = 6
     n_rovers = 15
     base_poi_value = 1.
     n_pois = 4

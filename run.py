@@ -11,7 +11,7 @@ import glob
 experiment_arg_dict = trial_setup()
 experiment_name = experiment_arg_dict["trial"].experiment_name 
 
-n_stat_runs = 1
+n_stat_runs = 5
 
 mods_to_mix = [
     (global_reward),

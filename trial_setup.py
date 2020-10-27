@@ -16,7 +16,7 @@ from rockefeg.policyopt.value_target import TdLambdaTargetSetter
 from rockefeg.cyutil.array import DoubleArray
 
 from mean_fitness_critic import MeanFitnessCriticSystem
-from mean_fitness_critic import MeanSumFitnessCriticSystem
+from mean_fitness_critic import MeanSumFitnessCriticSystem, MeanSumFitnessCriticSystem_0
 
 from rbfn_approximator import RbfnApproximator
 
@@ -171,6 +171,49 @@ def mean_fitness_critic(arg_dict):
         fitness_critic_system.set_critic_update_batch_size(25)
         
         intermediate_critic.set_learning_rate(1e-2)
+                
+        agent_systems.set_item(rover_id, fitness_critic_system)
+        
+def sum_rbfn_fitness_critic_0_original(arg_dict):
+    multiagent_system = arg_dict["trial"].system
+    
+    agent_systems = multiagent_system.agent_systems()
+    
+    for rover_id in range(len(agent_systems)):
+        evolving_system = agent_systems.item(rover_id)
+        
+        
+        n_centers = 160
+        rbfn = Rbfn(10, n_centers, 1)
+        
+        intermediate_critic = RbfnApproximator(rbfn)
+        
+        fitness_critic_system = (
+            MeanSumFitnessCriticSystem_0(
+                evolving_system,
+                intermediate_critic))
+                
+        fitness_critic_system.trajectory_buffer().set_capacity(50)
+        fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
+        fitness_critic_system.set_n_trajectories_per_critic_update_batch(1)
+        
+        locations = np.random.uniform(
+            [0., 0., 0., 0., 0., 0., 0., 0., -0.8, -0.8], 
+            [5., 5., 5., 5., 5., 5., 5., 5., 0.8, 0.8],
+            size = (n_centers, 10))
+        
+        intermediate_critic.set_center_locations(locations)
+        intermediate_critic.set_uncertainties(DoubleArray(1e8 * np.ones(n_centers))) # HERE
+        intermediate_critic.set_values(DoubleArray(1e3 * np.ones(n_centers)))
+        intermediate_critic.set_counters(DoubleArray(1 * np.ones(n_centers)))
+        
+        intermediate_critic.scale_multiplier = 1.
+        intermediate_critic.discount_factor = 0.999
+        intermediate_critic.exploration_incentive_factor = 0. # HERE
+        intermediate_critic.exploration_sampling_factor = 0.
+        intermediate_critic.process_uncertainty_rate = 0.0001
+        intermediate_critic.center_relocalization_rate = 0.
+        intermediate_critic.epsilon = 1e-9
                 
         agent_systems.set_item(rover_id, fitness_critic_system)
         

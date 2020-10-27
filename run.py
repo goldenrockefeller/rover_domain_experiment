@@ -11,11 +11,11 @@ import glob
 experiment_arg_dict = trial_setup()
 experiment_name = experiment_arg_dict["trial"].experiment_name 
 
-n_stat_runs = 5
+n_stat_runs = 2
 
 mods_to_mix = [
     (global_reward,),
-    (sum_rbfn_fitness_critic_0, )
+    (sum_rbfn_fitness_critic_0_original, rbfn_fitness_critic, rbfn_fitness_critic_0)
 ]
 
 active_mod_combos = list(itertools.product(*mods_to_mix))

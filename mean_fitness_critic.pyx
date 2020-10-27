@@ -109,3 +109,29 @@ cdef class MeanSumFitnessCriticSystem(MeanFitnessCriticSystem):
 
         system.receive_feedback(new_feedback + experience.reward)
 
+cdef class MeanSumFitnessCriticSystem_0(MeanFitnessCriticSystem):
+    #step_wise feedback
+    cpdef void receive_feedback(self, feedback) except *:
+        cdef ExperienceDatum experience
+        cdef double new_feedback
+        cdef BaseFunctionApproximator intermediate_critic
+        cdef TypedList current_trajectory
+        cdef BaseSystem system
+
+        system = self.super_system()
+
+        intermediate_critic = self.intermediate_critic()
+
+        experience = new_ExperienceDatum()
+        experience.state = self.current_state()
+        experience.action = self.current_action()
+        experience.reward = feedback
+
+
+        current_trajectory = self.current_trajectory()
+        current_trajectory.append(experience)
+
+        new_feedback = intermediate_critic.eval(experience).view[0]
+
+        system.receive_feedback(new_feedback + 0. * experience.reward)
+

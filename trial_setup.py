@@ -16,6 +16,7 @@ from rockefeg.policyopt.value_target import TdLambdaTargetSetter
 from rockefeg.cyutil.array import DoubleArray
 
 from mean_fitness_critic import MeanFitnessCriticSystem
+from mean_fitness_critic import MeanSumFitnessCriticSystem
 
 from rbfn_approximator import RbfnApproximator
 
@@ -30,7 +31,7 @@ import numpy as np
 
 def trial_setup():
     arg_dict = {}
-    experiment_name = "AAMAS_2021_nreq_4" 
+    experiment_name = "Test1" 
     n_req = 4
     n_rovers = 15
     base_poi_value = 1.
@@ -63,7 +64,7 @@ def trial_setup():
     domain.base_poi_value = base_poi_value
 
     # Muliagent System
-    n_policies_per_agent = 50
+    n_policies_per_agent = 5
     n_policy_hidden_neurons = 32
     
     multiagent_system = MultiagentSystem()
@@ -173,7 +174,7 @@ def mean_fitness_critic(arg_dict):
                 
         agent_systems.set_item(rover_id, fitness_critic_system)
         
-def my_rbfn_fitness_critic(arg_dict):
+def sum_rbfn_fitness_critic_0(arg_dict):
     multiagent_system = arg_dict["trial"].system
     
     agent_systems = multiagent_system.agent_systems()
@@ -188,7 +189,7 @@ def my_rbfn_fitness_critic(arg_dict):
         intermediate_critic = RbfnApproximator(rbfn)
         
         fitness_critic_system = (
-            MeanFitnessCriticSystem(
+            MeanSumFitnessCriticSystem(
                 evolving_system,
                 intermediate_critic))
                 
@@ -198,79 +199,10 @@ def my_rbfn_fitness_critic(arg_dict):
         
         locations = np.random.uniform(
             [0., 0., 0., 0., 0., 0., 0., 0., -0.8, -0.8], 
-            [15., 15., 15., 15., 5., 5., 5., 5., 0.8, 0.8],
+            [5., 5., 5., 5., 5., 5., 5., 5., 0.8, 0.8],
             size = (n_centers, 10))
-            
-        scalings = np.zeros( (n_centers, 10))
-        scalings[:, 0] = 1./15.
-        scalings[:, 1] = 1./15.
-        scalings[:, 2] = 1./15.
-        scalings[:, 3] = 1./15.
-        scalings[:, 4] = 1./5.
-        scalings[:, 5] = 1./5.
-        scalings[:, 6] = 1./5.
-        scalings[:, 7] = 1./5.
-        scalings[:, 8] = 1./0.8
-        scalings[:, 9] = 1./0.8
         
         intermediate_critic.set_center_locations(locations)
-        intermediate_critic.set_center_scalings(scalings)
-        intermediate_critic.set_uncertainties(DoubleArray(1e8 * np.ones(n_centers))) # HERE
-        intermediate_critic.set_values(DoubleArray(1e3 * np.ones(n_centers)))
-        intermediate_critic.set_counters(DoubleArray(1 * np.ones(n_centers)))
-        
-        intermediate_critic.scale_multiplier = 1.
-        intermediate_critic.discount_factor = 0.999
-        intermediate_critic.exploration_incentive_factor = 1. # HERE
-        intermediate_critic.exploration_sampling_factor = 1.
-        intermediate_critic.process_uncertainty_rate = 0.0001
-        intermediate_critic.center_relocalization_rate = 0.
-        intermediate_critic.epsilon = 1e-9
-                
-        agent_systems.set_item(rover_id, fitness_critic_system)
-        
-def my_rbfn_fitness_critic_0(arg_dict):
-    multiagent_system = arg_dict["trial"].system
-    
-    agent_systems = multiagent_system.agent_systems()
-    
-    for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems.item(rover_id)
-        
-        
-        n_centers = 160
-        rbfn = Rbfn(10, n_centers, 1)
-        
-        intermediate_critic = RbfnApproximator(rbfn)
-        
-        fitness_critic_system = (
-            MeanFitnessCriticSystem(
-                evolving_system,
-                intermediate_critic))
-                
-        fitness_critic_system.trajectory_buffer().set_capacity(50)
-        fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
-        fitness_critic_system.set_n_trajectories_per_critic_update_batch(1)
-        
-        locations = np.random.uniform(
-            [0., 0., 0., 0., 0., 0., 0., 0., -0.8, -0.8], 
-            [15., 15., 15., 15., 5., 5., 5., 5., 0.8, 0.8],
-            size = (n_centers, 10))
-            
-        scalings = np.zeros( (n_centers, 10))
-        scalings[:, 0] = 1./15.
-        scalings[:, 1] = 1./15.
-        scalings[:, 2] = 1./15.
-        scalings[:, 3] = 1./15.
-        scalings[:, 4] = 1./5.
-        scalings[:, 5] = 1./5.
-        scalings[:, 6] = 1./5.
-        scalings[:, 7] = 1./5.
-        scalings[:, 8] = 1./0.8
-        scalings[:, 9] = 1./0.8
-        
-        intermediate_critic.set_center_locations(locations)
-        intermediate_critic.set_center_scalings(scalings)
         intermediate_critic.set_uncertainties(DoubleArray(1e8 * np.ones(n_centers))) # HERE
         intermediate_critic.set_values(DoubleArray(1e3 * np.ones(n_centers)))
         intermediate_critic.set_counters(DoubleArray(1 * np.ones(n_centers)))

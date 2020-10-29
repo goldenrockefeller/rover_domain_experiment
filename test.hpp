@@ -17,4 +17,8 @@ public:
 std::size_t type_code(Test* test);
 
 bool can_cast(Test* test);
+
+int inline work() {
+    return 5;
+}
 #endif

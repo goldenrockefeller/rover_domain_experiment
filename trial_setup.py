@@ -64,7 +64,7 @@ def trial_setup():
     domain.base_poi_value = base_poi_value
 
     # Muliagent System
-    n_policies_per_agent = 5
+    n_policies_per_agent = 50
     n_policy_hidden_neurons = 32
     
     multiagent_system = MultiagentSystem()

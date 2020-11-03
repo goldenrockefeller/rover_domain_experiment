@@ -60,14 +60,16 @@ cdef class MeanFitnessCriticSystem(FitnessCriticSystem):
                     fitness = 0.
                     for experience in trajectory:
                         fitness += experience.reward
+                    fitness /= len(trajectory)
 
                     for target_id in range(len(trajectory)):
                         experience = trajectory.item(target_id)
                         target = new_DoubleArray(1)
                         target.view[0] = fitness
-                        target_entry_list[target_id] = new_TargetEntry()
-                        target_entry_list[target_id].input = experience
-                        target_entry_list[target_id].target = target
+                        target_entry = new_TargetEntry()
+                        target_entry.input = experience
+                        target_entry.target = target
+                        target_entry_list[target_id] = target_entry
 
 
                     target_entries = new_TypedList(TargetEntry)
@@ -91,6 +93,7 @@ cdef class MeanSumFitnessCriticSystem(MeanFitnessCriticSystem):
         cdef BaseFunctionApproximator intermediate_critic
         cdef TypedList current_trajectory
         cdef BaseSystem system
+        cdef DoubleArray intermediate_eval
 
         system = self.super_system()
 
@@ -105,7 +108,8 @@ cdef class MeanSumFitnessCriticSystem(MeanFitnessCriticSystem):
         current_trajectory = self.current_trajectory()
         current_trajectory.append(experience)
 
-        new_feedback = intermediate_critic.eval(experience).view[0]
+        intermediate_eval = intermediate_critic.eval(experience)
+        new_feedback = intermediate_eval.view[0]
 
         system.receive_feedback(new_feedback + experience.reward)
 
@@ -117,6 +121,7 @@ cdef class MeanSumFitnessCriticSystem_0(MeanFitnessCriticSystem):
         cdef BaseFunctionApproximator intermediate_critic
         cdef TypedList current_trajectory
         cdef BaseSystem system
+        cdef DoubleArray intermediate_eval
 
         system = self.super_system()
 
@@ -131,7 +136,9 @@ cdef class MeanSumFitnessCriticSystem_0(MeanFitnessCriticSystem):
         current_trajectory = self.current_trajectory()
         current_trajectory.append(experience)
 
-        new_feedback = intermediate_critic.eval(experience).view[0]
+        intermediate_eval = intermediate_critic.eval(experience)
+        new_feedback = intermediate_eval.view[0]
+
 
         system.receive_feedback(new_feedback + 0. * experience.reward)
 

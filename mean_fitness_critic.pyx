@@ -11,7 +11,7 @@ from rockefeg.cyutil.typed_list cimport is_sub_full_type
 from rockefeg.cyutil.array cimport DoubleArray, new_DoubleArray
 
 
-from rockefeg.policyopt.fitness_critic cimport FitnessCriticSystem
+from rockefeg.policyopt.fitness_critic cimport FitnessCriticSystem, init_FitnessCriticSystem
 
 @cython.warn.undeclared(True)
 cdef class MeanFitnessCriticSystem(FitnessCriticSystem):
@@ -84,6 +84,94 @@ cdef class MeanFitnessCriticSystem(FitnessCriticSystem):
         system = self.super_system()
         system.prep_for_epoch()
 
+
+cdef class TransferFitnessCriticSystem(MeanFitnessCriticSystem):
+    cdef public Py_ssize_t n_epochs_elapsed
+    cdef public Py_ssize_t n_epochs_before_switch
+
+    def __init__(
+            self,
+            BaseSystem super_system,
+            BaseFunctionApproximator intermediate_critic):
+        init_FitnessCriticSystem(self, super_system, intermediate_critic)
+        self.n_epochs_elapsed = 0
+        self.n_epochs_before_switch = 2500
+
+    cpdef void prep_for_epoch(self) except *:
+        MeanFitnessCriticSystem.prep_for_epoch(self)
+        self.n_epochs_elapsed += 1
+
+    cpdef void receive_feedback(self, feedback) except *:
+        cdef ExperienceDatum experience
+        cdef double new_feedback
+        cdef BaseFunctionApproximator intermediate_critic
+        cdef TypedList current_trajectory
+        cdef BaseSystem system
+        cdef DoubleArray intermediate_eval
+
+        system = self.super_system()
+
+        intermediate_critic = self.intermediate_critic()
+
+        experience = new_ExperienceDatum()
+        experience.state = self.current_state()
+        experience.action = self.current_action()
+        experience.reward = feedback
+
+
+        current_trajectory = self.current_trajectory()
+        current_trajectory.append(experience)
+
+        intermediate_eval = intermediate_critic.eval(experience)
+        new_feedback = intermediate_eval.view[0]
+
+        if self.n_epochs_elapsed < self.n_epochs_before_switch :
+            system.receive_feedback(new_feedback)
+        else:
+            system.receive_feedback(experience.reward)
+
+cdef class AlternatingFitnessCriticSystem(MeanFitnessCriticSystem):
+    cdef public Py_ssize_t n_epochs_elapsed
+
+    def __init__(
+            self,
+            BaseSystem super_system,
+            BaseFunctionApproximator intermediate_critic):
+        init_FitnessCriticSystem(self, super_system, intermediate_critic)
+        self.n_epochs_elapsed = 0
+
+    cpdef void prep_for_epoch(self) except *:
+        MeanFitnessCriticSystem.prep_for_epoch(self)
+        self.n_epochs_elapsed += 1
+
+    cpdef void receive_feedback(self, feedback) except *:
+        cdef ExperienceDatum experience
+        cdef double new_feedback
+        cdef BaseFunctionApproximator intermediate_critic
+        cdef TypedList current_trajectory
+        cdef BaseSystem system
+        cdef DoubleArray intermediate_eval
+
+        system = self.super_system()
+
+        intermediate_critic = self.intermediate_critic()
+
+        experience = new_ExperienceDatum()
+        experience.state = self.current_state()
+        experience.action = self.current_action()
+        experience.reward = feedback
+
+
+        current_trajectory = self.current_trajectory()
+        current_trajectory.append(experience)
+
+        intermediate_eval = intermediate_critic.eval(experience)
+        new_feedback = intermediate_eval.view[0]
+
+        if self.n_epochs_elapsed % 3 == 0 :
+            system.receive_feedback(new_feedback)
+        else:
+            system.receive_feedback(experience.reward)
 
 cdef class MeanSumFitnessCriticSystem(MeanFitnessCriticSystem):
     #step_wise feedback

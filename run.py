@@ -15,7 +15,7 @@ n_stat_runs = 5
 
 mods_to_mix = [
     (global_reward,),
-    (sum_rbfn_fitness_critic_0,)
+    (transfer, alternate)
 ]
 
 active_mod_combos = list(itertools.product(*mods_to_mix))

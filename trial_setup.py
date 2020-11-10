@@ -17,6 +17,8 @@ from rockefeg.cyutil.array import DoubleArray
 
 from mean_fitness_critic import MeanFitnessCriticSystem
 from mean_fitness_critic import MeanSumFitnessCriticSystem, MeanSumFitnessCriticSystem_0
+from mean_fitness_critic import TransferFitnessCriticSystem, AlternatingFitnessCriticSystem
+
 
 from rbfn_approximator import RbfnApproximator
 
@@ -174,7 +176,8 @@ def mean_fitness_critic(arg_dict):
                 
         agent_systems.set_item(rover_id, fitness_critic_system)
         
-def sum_rbfn_fitness_critic_0_original(arg_dict):
+        
+def transfer(arg_dict):
     multiagent_system = arg_dict["trial"].system
     
     agent_systems = multiagent_system.agent_systems()
@@ -189,7 +192,7 @@ def sum_rbfn_fitness_critic_0_original(arg_dict):
         intermediate_critic = RbfnApproximator(rbfn)
         
         fitness_critic_system = (
-            MeanSumFitnessCriticSystem_0(
+            TransferFitnessCriticSystem(
                 evolving_system,
                 intermediate_critic))
                 
@@ -217,7 +220,7 @@ def sum_rbfn_fitness_critic_0_original(arg_dict):
                 
         agent_systems.set_item(rover_id, fitness_critic_system)
         
-def sum_rbfn_fitness_critic_0(arg_dict):
+def alternate(arg_dict):
     multiagent_system = arg_dict["trial"].system
     
     agent_systems = multiagent_system.agent_systems()
@@ -232,7 +235,7 @@ def sum_rbfn_fitness_critic_0(arg_dict):
         intermediate_critic = RbfnApproximator(rbfn)
         
         fitness_critic_system = (
-            MeanSumFitnessCriticSystem(
+            AlternatingFitnessCriticSystem(
                 evolving_system,
                 intermediate_critic))
                 

@@ -56,8 +56,8 @@ cdef class TrialRoverDomain(BaseDomain):
         poi_data = setting_state.poi_data()
         poi_data.set_items(poi_data_list)
 
-    cpdef copy(self, copy_obj = None):
-        raise NotImplementedError
+    cpdef TrialRoverDomain copy(self, copy_obj = None):
+        raise NotImplementedError()
 
     cpdef randomize_setting_state(self):
         cdef State setting_state

@@ -114,7 +114,7 @@ cdef class TransferFitnessCriticSystem(MeanFitnessCriticSystem):
         intermediate_critic = self.intermediate_critic()
 
         experience = new_ExperienceDatum()
-        experience.state = self.current_state()
+        experience.observation = self.current_observation()
         experience.action = self.current_action()
         experience.reward = feedback
 
@@ -157,7 +157,7 @@ cdef class AlternatingFitnessCriticSystem(MeanFitnessCriticSystem):
         intermediate_critic = self.intermediate_critic()
 
         experience = new_ExperienceDatum()
-        experience.state = self.current_state()
+        experience.observation = self.current_observation()
         experience.action = self.current_action()
         experience.reward = feedback
 
@@ -188,7 +188,7 @@ cdef class MeanSumFitnessCriticSystem(MeanFitnessCriticSystem):
         intermediate_critic = self.intermediate_critic()
 
         experience = new_ExperienceDatum()
-        experience.state = self.current_state()
+        experience.observation = self.current_observation()
         experience.action = self.current_action()
         experience.reward = feedback
 
@@ -216,7 +216,7 @@ cdef class MeanSumFitnessCriticSystem_0(MeanFitnessCriticSystem):
         intermediate_critic = self.intermediate_critic()
 
         experience = new_ExperienceDatum()
-        experience.state = self.current_state()
+        experience.observation = self.current_observation()
         experience.action = self.current_action()
         experience.reward = feedback
 

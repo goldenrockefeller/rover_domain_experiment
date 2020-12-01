@@ -14,7 +14,7 @@ cdef class CauchyPhenotype(DefaultPhenotype):
     def __init__(self, policy):
         init_DefaultPhenotype(self, policy)
 
-    cpdef copy(self, copy_obj = None):
+    cpdef CauchyPhenotype copy(self, copy_obj = None):
         cdef CauchyPhenotype new_phenotype
 
         if copy_obj is None:

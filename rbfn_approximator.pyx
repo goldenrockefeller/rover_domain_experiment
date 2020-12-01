@@ -7,7 +7,7 @@ from rockefeg.policyopt.neural_network cimport Rbfn
 from rockefeg.policyopt.neural_network cimport normalization_for_DoubleArray
 from rockefeg.policyopt.neural_network cimport rbfn_pre_norm_activations_eval
 from rockefeg.policyopt.experience cimport ExperienceDatum
-from rockefeg.cyutil.typed_list cimport TypedList
+from rockefeg.cyutil.typed_list cimport TypedList, BaseReadableTypedList
 from rockefeg.cyutil.array cimport DoubleArray, new_DoubleArray
 from rockefeg.policyopt.map cimport BaseDifferentiableMap
 from rbfn_random cimport random_normal
@@ -123,7 +123,7 @@ cdef class RbfnApproximator(BaseFunctionApproximator):
             ) )
 
 
-    cpdef copy(self, copy_obj = None):
+    cpdef RbfnApproximator copy(self, copy_obj = None):
         cdef Rbfn new_approximator
         if copy_obj is None:
             new_approximator = (
@@ -253,7 +253,7 @@ cdef class RbfnApproximator(BaseFunctionApproximator):
         cdef valarray[double] random_output_deviations
         cdef double uncertainty_eval
 
-        input = concatenate_state_action(raw_input)
+        input = concatenate_observation_action(raw_input)
 
         value_eval = self.rbfn.eval(input)
 
@@ -280,7 +280,7 @@ cdef class RbfnApproximator(BaseFunctionApproximator):
 
         return eval
 
-    cpdef void batch_update(self, entries) except *:
+    cpdef void batch_update(self, BaseReadableTypedList entries) except *:
         cdef TypedList cy_entries
         cdef Rbfn rbfn
         cdef double error
@@ -324,7 +324,7 @@ cdef class RbfnApproximator(BaseFunctionApproximator):
         # Get Fitness Estimate.
         fitness_estimate = 0.
         for entry in entries:
-            input = concatenate_state_action(entry.input)
+            input = concatenate_observation_action(entry.input)
             eval = self.rbfn.eval(input)
             fitness_estimate += eval.view[0] / trajectory_size
 
@@ -363,7 +363,7 @@ cdef class RbfnApproximator(BaseFunctionApproximator):
         entry_id = 0
         for entry in entries:
             inputs[<Py_ssize_t> entry_id] = (
-                concatenate_state_action(entry.input))
+                concatenate_observation_action(entry.input))
             entry_id += 1
 
         # Get center participation and normalized activations.
@@ -583,12 +583,12 @@ cdef valarray[double] normal_valarray(size_t size) except *:
 
     return arr
 
-cpdef DoubleArray concatenate_state_action(raw_input):
+cpdef DoubleArray concatenate_observation_action(raw_input):
     cdef ExperienceDatum input
-    cdef DoubleArray state
+    cdef DoubleArray observation
     cdef DoubleArray action
-    cdef DoubleArray state_action
-    cdef Py_ssize_t n_state_dims
+    cdef DoubleArray observation_action
+    cdef Py_ssize_t n_observation_dims
     cdef Py_ssize_t n_action_dims
     cdef Py_ssize_t id
 
@@ -597,21 +597,21 @@ cpdef DoubleArray concatenate_state_action(raw_input):
 
     input = <ExperienceDatum?> raw_input
 
-    state = <DoubleArray?>input.state
+    observation = <DoubleArray?>input.observation
     action = <DoubleArray?>input.action
 
-    n_state_dims = len(state)
+    n_observation_dims = len(observation)
     n_action_dims = len(action)
-    state_action = new_DoubleArray(n_state_dims + n_action_dims)
+    observation_action = new_DoubleArray(n_observation_dims + n_action_dims)
 
-    for id in range(n_state_dims):
-        state_action.view[id] = state.view[id]
+    for id in range(n_observation_dims):
+        observation_action.view[id] = observation.view[id]
 
     for id in range(n_action_dims):
-        state_action.view[id + n_state_dims] = action.view[id]
+        observation_action.view[id + n_observation_dims] = action.view[id]
 
 
-    return state_action
+    return observation_action
 
 cdef inline void assign_valarray_to_double(
         valarray[double] arr,

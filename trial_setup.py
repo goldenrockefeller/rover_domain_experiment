@@ -34,7 +34,7 @@ import numpy as np
 def trial_setup():
     arg_dict = {}
     experiment_name = "nope" 
-    n_req = 6
+    n_req = 4
     n_rovers = 15
     base_poi_value = 1.
     n_pois = 4
@@ -124,7 +124,7 @@ def fitness_critic(arg_dict):
     agent_systems = multiagent_system.agent_systems()
     
     for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems.item(rover_id)
+        evolving_system = agent_systems[rover_id]
         
         map = ReluLinear(10, 160, 1, True)
         map.leaky_scale = 0.1
@@ -145,7 +145,7 @@ def fitness_critic(arg_dict):
         
         intermediate_critic.set_learning_rate(1e-4)
                 
-        agent_systems.set_item(rover_id, fitness_critic_system)
+        agent_systems[rover_id] = fitness_critic_system
         
 def mean_fitness_critic(arg_dict):
     multiagent_system = arg_dict["trial"].system
@@ -153,7 +153,7 @@ def mean_fitness_critic(arg_dict):
     agent_systems = multiagent_system.agent_systems()
     
     for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems.item(rover_id)
+        evolving_system = agent_systems[rover_id]
         
         map = Rbfn(10, 160, 1)
         #map.leaky_scale = 0.1
@@ -174,7 +174,7 @@ def mean_fitness_critic(arg_dict):
         
         intermediate_critic.set_learning_rate(1e-2)
                 
-        agent_systems.set_item(rover_id, fitness_critic_system)
+        agent_systems[rover_id] = fitness_critic_system
         
         
 def transfer(arg_dict):
@@ -183,7 +183,7 @@ def transfer(arg_dict):
     agent_systems = multiagent_system.agent_systems()
     
     for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems.item(rover_id)
+        evolving_system = agent_systems[rover_id]
         
         
         n_centers = 160
@@ -218,7 +218,7 @@ def transfer(arg_dict):
         intermediate_critic.center_relocalization_rate = 0.
         intermediate_critic.epsilon = 1e-9
                 
-        agent_systems.set_item(rover_id, fitness_critic_system)
+        agent_systems[rover_id] = fitness_critic_system
         
 def alternate(arg_dict):
     multiagent_system = arg_dict["trial"].system
@@ -226,7 +226,7 @@ def alternate(arg_dict):
     agent_systems = multiagent_system.agent_systems()
     
     for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems.item(rover_id)
+        evolving_system = agent_systems[rover_id]
         
         
         n_centers = 160
@@ -261,7 +261,7 @@ def alternate(arg_dict):
         intermediate_critic.center_relocalization_rate = 0.
         intermediate_critic.epsilon = 1e-9
                 
-        agent_systems.set_item(rover_id, fitness_critic_system)
+        agent_systems[rover_id] = fitness_critic_system
         
 def rbfn_fitness_critic(arg_dict):
     multiagent_system = arg_dict["trial"].system
@@ -269,7 +269,7 @@ def rbfn_fitness_critic(arg_dict):
     agent_systems = multiagent_system.agent_systems()
     
     for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems.item(rover_id)
+        evolving_system = agent_systems[rover_id]
         
         
         n_centers = 160
@@ -304,7 +304,7 @@ def rbfn_fitness_critic(arg_dict):
         intermediate_critic.center_relocalization_rate = 0.
         intermediate_critic.epsilon = 1e-9
                 
-        agent_systems.set_item(rover_id, fitness_critic_system)
+        agent_systems[rover_id] = fitness_critic_system
         
 def rbfn_fitness_critic_noisier(arg_dict):
     multiagent_system = arg_dict["trial"].system
@@ -312,7 +312,7 @@ def rbfn_fitness_critic_noisier(arg_dict):
     agent_systems = multiagent_system.agent_systems()
     
     for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems.item(rover_id)
+        evolving_system = agent_systems[rover_id]
         
         
         n_centers = 160
@@ -347,7 +347,7 @@ def rbfn_fitness_critic_noisier(arg_dict):
         intermediate_critic.center_relocalization_rate = 0.
         intermediate_critic.epsilon = 1e-9
                 
-        agent_systems.set_item(rover_id, fitness_critic_system)
+        agent_systems[rover_id] = fitness_critic_system
         
         
 def rbfn_fitness_critic_0(arg_dict):
@@ -356,7 +356,7 @@ def rbfn_fitness_critic_0(arg_dict):
     agent_systems = multiagent_system.agent_systems()
     
     for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems.item(rover_id)
+        evolving_system = agent_systems[rover_id]
         
         
         n_centers = 160
@@ -391,14 +391,14 @@ def rbfn_fitness_critic_0(arg_dict):
         intermediate_critic.center_relocalization_rate = 0.
         intermediate_critic.epsilon = 1e-9
                 
-        agent_systems.set_item(rover_id, fitness_critic_system)
+        agent_systems[rover_id] = fitness_critic_system
 # def mean_robust_fitness_critic(arg_dict):
 #     multiagent_system = arg_dict["trial"].system
 #     
 #     agent_systems = multiagent_system.agent_systems()
 #     
 #     for rover_id in range(len(agent_systems)):
-#         evolving_system = agent_systems.item(rover_id)
+#         evolving_system = agent_systems[rover_id]
 #         
 #         map = Rbfn(10, 160, 1)
 #         #map.leaky_scale = 0.1
@@ -419,7 +419,7 @@ def rbfn_fitness_critic_0(arg_dict):
 #         
 #         intermediate_critic.set_learning_rate(1e-2)
 #                 
-#         agent_systems.set_item(rover_id, fitness_critic_system)
+#         agent_systems[rover_id] = fitness_critic_system
         
 def q_fitness_critic(arg_dict):
     multiagent_system = arg_dict["trial"].system
@@ -427,7 +427,7 @@ def q_fitness_critic(arg_dict):
     agent_systems = multiagent_system.agent_systems()
     
     for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems.item(rover_id)
+        evolving_system = agent_systems[rover_id]
         
         map = ReluLinear(10, 60, 1)
         
@@ -453,7 +453,7 @@ def q_fitness_critic(arg_dict):
         fitness_critic_system.set_value_target_setter(q_value_target_setter)
         q_value_target_setter.set_trace_decay(0.)
                 
-        agent_systems.set_item(rover_id, fitness_critic_system)
+        agent_systems[rover_id] = fitness_critic_system
         
 def monte_fitness_critic(arg_dict):
     multiagent_system = arg_dict["trial"].system
@@ -461,7 +461,7 @@ def monte_fitness_critic(arg_dict):
     agent_systems = multiagent_system.agent_systems()
     
     for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems.item(rover_id)
+        evolving_system = agent_systems[rover_id]
         
         map = ReluLinear(10, 60, 1)
         
@@ -487,8 +487,7 @@ def monte_fitness_critic(arg_dict):
         
         fitness_critic_system.set_value_target_setter(q_value_target_setter)
                 
-        agent_systems.set_item(rover_id, fitness_critic_system)
-
+        agent_systems[rover_id] = fitness_critic_system
 
 #             
 # def new_mutation(factor):            

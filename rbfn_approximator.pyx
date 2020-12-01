@@ -7,12 +7,14 @@ from rockefeg.policyopt.neural_network cimport Rbfn
 from rockefeg.policyopt.neural_network cimport normalization_for_DoubleArray
 from rockefeg.policyopt.neural_network cimport rbfn_pre_norm_activations_eval
 from rockefeg.policyopt.experience cimport ExperienceDatum
-from rockefeg.cyutil.typed_list cimport TypedList, BaseReadableTypedList
 from rockefeg.cyutil.array cimport DoubleArray, new_DoubleArray
 from rockefeg.policyopt.map cimport BaseDifferentiableMap
 from rbfn_random cimport random_normal
 
 from libcpp.vector cimport vector
+
+
+from typing import Sequence
 
 cdef extern from "<valarray>" namespace "std" nogil:
     cdef cppclass valarray[T]:
@@ -280,8 +282,8 @@ cdef class RbfnApproximator(BaseFunctionApproximator):
 
         return eval
 
-    cpdef void batch_update(self, BaseReadableTypedList entries) except *:
-        cdef TypedList cy_entries
+    @cython.locals(entries = list)
+    cpdef void batch_update(self, entries: Sequence[TargetEntry]) except *:
         cdef Rbfn rbfn
         cdef double error
         cdef double fitness_estimate
@@ -329,8 +331,7 @@ cdef class RbfnApproximator(BaseFunctionApproximator):
             fitness_estimate += eval.view[0] / trajectory_size
 
         # Get fitness target and error.
-        cy_entries = entries
-        entry = cy_entries.item(0)
+        entry = entries[0]
         fitness_target = entry.target
         error = (fitness_target.view[0] - fitness_estimate)
 

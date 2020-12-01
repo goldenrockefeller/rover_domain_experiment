@@ -6,15 +6,19 @@ from rockefeg.policyopt.buffer cimport ShuffleBuffer, new_ShuffleBuffer
 from rockefeg.policyopt.experience cimport ExperienceDatum, new_ExperienceDatum
 from rockefeg.policyopt.function_approximation cimport BaseFunctionApproximator, TargetEntry, new_TargetEntry
 from rockefeg.policyopt.system cimport BaseSystem
-from rockefeg.cyutil.typed_list cimport TypedList, new_TypedList
-from rockefeg.cyutil.typed_list cimport is_sub_full_type
 from rockefeg.cyutil.array cimport DoubleArray, new_DoubleArray
 
 
 from rockefeg.policyopt.fitness_critic cimport FitnessCriticSystem, init_FitnessCriticSystem
 
+
+from typing import List
+
+
 @cython.warn.undeclared(True)
 cdef class MeanFitnessCriticSystem(FitnessCriticSystem):
+
+    @cython.locals(trajectory = list, target_entries = list)
     cpdef void prep_for_epoch(self) except *:
         cdef Py_ssize_t batch_id
         cdef Py_ssize_t trajectory_id
@@ -25,10 +29,9 @@ cdef class MeanFitnessCriticSystem(FitnessCriticSystem):
         cdef ShuffleBuffer trajectory_buffer
         cdef ShuffleBuffer critic_target_buffer
         cdef BaseValueTargetSetter value_target_setter
-        cdef TypedList trajectory
-        cdef TypedList target_entries
+        trajectory: List[ExperienceDatum]
+        target_entries: List[TargetEntry]
         cdef TargetEntry target_entry
-        cdef list target_entry_list
         cdef BaseFunctionApproximator intermediate_critic
         cdef ExperienceDatum experience
         cdef BaseSystem system
@@ -55,7 +58,7 @@ cdef class MeanFitnessCriticSystem(FitnessCriticSystem):
                 for trajectory_id in range(n_trajectories_per_batch):
                     trajectory = trajectory_buffer.next_shuffled_datum()
 
-                    target_entry_list = [None] * len(trajectory)
+                    target_entries = [None] * len(trajectory)
 
                     fitness = 0.
                     for experience in trajectory:
@@ -63,17 +66,14 @@ cdef class MeanFitnessCriticSystem(FitnessCriticSystem):
                     fitness /= len(trajectory)
 
                     for target_id in range(len(trajectory)):
-                        experience = trajectory.item(target_id)
+                        experience = trajectory[target_id]
                         target = new_DoubleArray(1)
                         target.view[0] = fitness
                         target_entry = new_TargetEntry()
                         target_entry.input = experience
                         target_entry.target = target
-                        target_entry_list[target_id] = target_entry
+                        target_entries[target_id] = target_entry
 
-
-                    target_entries = new_TypedList(TargetEntry)
-                    target_entries.set_items(target_entry_list)
 
                     intermediate_critic.batch_update(target_entries)
 
@@ -101,11 +101,12 @@ cdef class TransferFitnessCriticSystem(MeanFitnessCriticSystem):
         MeanFitnessCriticSystem.prep_for_epoch(self)
         self.n_epochs_elapsed += 1
 
+    @cython.locals(current_trajectory = list)
     cpdef void receive_feedback(self, feedback) except *:
         cdef ExperienceDatum experience
         cdef double new_feedback
         cdef BaseFunctionApproximator intermediate_critic
-        cdef TypedList current_trajectory
+        current_trajectory: List[Experience]
         cdef BaseSystem system
         cdef DoubleArray intermediate_eval
 
@@ -144,11 +145,12 @@ cdef class AlternatingFitnessCriticSystem(MeanFitnessCriticSystem):
         MeanFitnessCriticSystem.prep_for_epoch(self)
         self.n_epochs_elapsed += 1
 
+    @cython.locals(current_trajectory = list)
     cpdef void receive_feedback(self, feedback) except *:
         cdef ExperienceDatum experience
         cdef double new_feedback
         cdef BaseFunctionApproximator intermediate_critic
-        cdef TypedList current_trajectory
+        current_trajectory: List[ExperienceDatum]
         cdef BaseSystem system
         cdef DoubleArray intermediate_eval
 
@@ -175,11 +177,12 @@ cdef class AlternatingFitnessCriticSystem(MeanFitnessCriticSystem):
 
 cdef class MeanSumFitnessCriticSystem(MeanFitnessCriticSystem):
     #step_wise feedback
+    @cython.locals(current_trajectory = list)
     cpdef void receive_feedback(self, feedback) except *:
         cdef ExperienceDatum experience
         cdef double new_feedback
         cdef BaseFunctionApproximator intermediate_critic
-        cdef TypedList current_trajectory
+        current_trajectory: List[ExperienceDatum]
         cdef BaseSystem system
         cdef DoubleArray intermediate_eval
 
@@ -203,11 +206,12 @@ cdef class MeanSumFitnessCriticSystem(MeanFitnessCriticSystem):
 
 cdef class MeanSumFitnessCriticSystem_0(MeanFitnessCriticSystem):
     #step_wise feedback
+    @cython.locals(current_trajectory = list)
     cpdef void receive_feedback(self, feedback) except *:
         cdef ExperienceDatum experience
         cdef double new_feedback
         cdef BaseFunctionApproximator intermediate_critic
-        cdef TypedList current_trajectory
+        current_trajectory: List[ExperienceDatum]
         cdef BaseSystem system
         cdef DoubleArray intermediate_eval
 

@@ -3,12 +3,14 @@ cimport cython
 from rockefeg.policyopt.domain cimport BaseDomain
 from rockefeg.roverdomain.rover_domain cimport RoverDomain
 from rockefeg.roverdomain.state cimport State, RoverDatum, PoiDatum
+from rockefeg.roverdomain.state cimport new_RoverDatum, new_PoiDatum
 from rockefeg.cyutil.array cimport DoubleArray
-from rockefeg.cyutil.typed_list cimport TypedList, new_TypedList
 
 from rockefeg.roverdomain.rover_domain import RoverDomain
 
 import numpy as np
+
+from typing import List, Sequence
 
 @cython.warn.undeclared(True)
 @cython.auto_pickle(True)
@@ -25,36 +27,36 @@ cdef class TrialRoverDomain(BaseDomain):
         self.poi_init_thickness = 0.
         self.poi_value_init_type = "sequential"
 
+    @cython.locals(rover_data=list)
     cpdef void set_n_rovers(self, Py_ssize_t n_rovers) except *:
         cdef State setting_state
         cdef Py_ssize_t i
-        cdef list rover_data_list
-        cdef TypedList rover_data
+        rover_data: List[RoverDatum]
 
         setting_state = self.super_domain.setting_state()
 
-        rover_data_list = [None] * n_rovers
+        rover_data = [None] * n_rovers
 
         for i in range(n_rovers):
-            rover_data_list[i] = RoverDatum()
-        rover_data = setting_state.rover_data()
-        rover_data.set_items(rover_data_list)
+            rover_data[i] = new_RoverDatum()
 
+
+        setting_state.set_rover_data(rover_data)
+
+    @cython.locals(poi_data=list)
     cpdef void set_n_pois(self, Py_ssize_t n_pois) except *:
         cdef State setting_state
         cdef Py_ssize_t i
-        cdef list poi_data_list
-        cdef TypedList poi_data
+        poi_data: List[PoiDatum]
 
         setting_state = self.super_domain.setting_state()
 
-        poi_data_list = [None] * n_pois
+        poi_data = [None] * n_pois
 
         for i in range(n_pois):
-            poi_data_list[i] = PoiDatum()
+            poi_data[i] = new_PoiDatum()
 
-        poi_data = setting_state.poi_data()
-        poi_data.set_items(poi_data_list)
+        setting_state.set_poi_data(poi_data)
 
     cpdef TrialRoverDomain copy(self, copy_obj = None):
         raise NotImplementedError()
@@ -117,20 +119,16 @@ cdef class TrialRoverDomain(BaseDomain):
     cpdef void reset_for_training(self) except *:
         self.super_domain.reset()
 
+    @cython.locals(joint_observation = list)
     cpdef observation(self):
-        cdef TypedList observations
+        joint_observation: List[DoubleArray]
 
-        observations = self.super_domain.rover_observations()
+        joint_observation = self.super_domain.rover_observations()
 
-        return observations.items_shallow_copy()
+        return joint_observation.copy()
 
-    cpdef void step(self, action) except *:
-        cdef TypedList joint_action
-
-        joint_action = new_TypedList(DoubleArray)
-        joint_action.set_items(action)
-
-        self.super_domain.step(joint_action)
+    cpdef void step(self, actions: Sequence[DoubleArray]) except *:
+        self.super_domain.step(actions)
 
     cpdef feedback(self):
         cdef list feedback

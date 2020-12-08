@@ -20,7 +20,7 @@ from mean_fitness_critic import MeanSumFitnessCriticSystem, MeanSumFitnessCritic
 from mean_fitness_critic import TransferFitnessCriticSystem, AlternatingFitnessCriticSystem
 
 
-from mlp import TorchMlp
+# from mlp import TorchMlp
 
 from rbfn_approximator import RbfnApproximator
 
@@ -103,32 +103,32 @@ def trial_setup():
     
     return arg_dict
 
-def torch_mlp(arg_dict):
-    multiagent_system = arg_dict["trial"].system
-    
-    agent_systems = multiagent_system.agent_systems()
-    
-    n_state_dims = 8
-    n_action_dims = 2
-    n_policy_hidden_neurons = 32
-    
-    for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems[rover_id]
-        n_policies_per_agent = len(evolving_system.phenotypes())
-        evolving_system.set_phenotypes([])
-        
-        for policy_id in range(n_policies_per_agent):
-            map = TorchMlp(
-                n_state_dims, 
-                n_policy_hidden_neurons, 
-                n_action_dims)
-            map = TanhLayer(map)
-            phenotype = (DefaultPhenotype(map)) 
-                            
-            phenotype.set_mutation_rate(0.01)
-            phenotype.set_mutation_factor(1)
-            
-            evolving_system.phenotypes().append(phenotype)
+# def torch_mlp(arg_dict):
+#     multiagent_system = arg_dict["trial"].system
+#     
+#     agent_systems = multiagent_system.agent_systems()
+#     
+#     n_state_dims = 8
+#     n_action_dims = 2
+#     n_policy_hidden_neurons = 32
+#     
+#     for rover_id in range(len(agent_systems)):
+#         evolving_system = agent_systems[rover_id]
+#         n_policies_per_agent = len(evolving_system.phenotypes())
+#         evolving_system.set_phenotypes([])
+#         
+#         for policy_id in range(n_policies_per_agent):
+#             map = TorchMlp(
+#                 n_state_dims, 
+#                 n_policy_hidden_neurons, 
+#                 n_action_dims)
+#             map = TanhLayer(map)
+#             phenotype = (DefaultPhenotype(map)) 
+#                             
+#             phenotype.set_mutation_rate(0.01)
+#             phenotype.set_mutation_factor(1)
+#             
+#             evolving_system.phenotypes().append(phenotype)
             
 def min_at_inf_transfer(arg_dict):
     multiagent_system = arg_dict["trial"].system

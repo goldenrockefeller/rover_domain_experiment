@@ -25,6 +25,7 @@ cdef extern from "<valarray>" namespace "std" nogil:
         valarray operator= (const valarray&)
         T& operator[] (size_t)
         T sum() const
+        T min() const
 
         valarray operator* (const valarray&, const valarray&)
         valarray operator* (const T&, const valarray&)
@@ -54,6 +55,7 @@ cdef class RbfnApproximator(BaseFunctionApproximator):
     cdef public double process_uncertainty_rate
     cdef public double center_relocalization_rate
     cdef public double epsilon
+    cdef public double min_at_inf_factor
 
     def __init__(self, Rbfn rbfn):
         cdef size_t center_id
@@ -99,6 +101,7 @@ cdef class RbfnApproximator(BaseFunctionApproximator):
         self.process_uncertainty_rate = 0.
         self.center_relocalization_rate = 1.
         self.epsilon = 1e-9
+        self.min_at_inf_factor = 0.
 
     def __reduce__(self):
         cdef DoubleArray counters
@@ -121,7 +124,8 @@ cdef class RbfnApproximator(BaseFunctionApproximator):
             self.exploration_sampling_factor,
             self.process_uncertainty_rate,
             self.center_relocalization_rate,
-            self.epsilon
+            self.epsilon,
+            self.min_at_inf_factor
             ) )
 
 
@@ -251,21 +255,32 @@ cdef class RbfnApproximator(BaseFunctionApproximator):
         cdef DoubleArray input
         cdef DoubleArray value_eval
         cdef DoubleArray eval
+        cdef DoubleArray pre_norm_activations_eval
         cdef valarray[double] normalized_activations
         cdef valarray[double] random_output_deviations
         cdef double uncertainty_eval
+        cdef double total_pre_norm_activation
+        cdef double min_value
 
         input = concatenate_observation_action(raw_input)
 
         value_eval = self.rbfn.eval(input)
 
+        pre_norm_activations_eval = (
+            rbfn_pre_norm_activations_eval(
+                self.rbfn,
+                input ) )
+
+        total_pre_norm_activation = (
+            valarray_from_DoubleArray(pre_norm_activations_eval).sum() )
+
+        min_value = self.rbfn.transform[0].min()
+
         # Get uncertainty evaluation.
         normalized_activations = (
             valarray_from_DoubleArray(
                 normalization_for_DoubleArray(
-                    rbfn_pre_norm_activations_eval(
-                        self.rbfn,
-                        input ) ) ) )
+                    pre_norm_activations_eval ) ) )
         #
         random_output_deviations = (
             (self.exploration_incentive_factor
@@ -278,6 +293,11 @@ cdef class RbfnApproximator(BaseFunctionApproximator):
             random_output_deviations * normalized_activations).sum()
 
         eval = value_eval.copy()
+        eval.view[0] = (
+            (total_pre_norm_activation * eval.view[0]
+                + self.min_at_inf_factor * min_value )
+            / (total_pre_norm_activation + min_value) )
+
         eval.view[0] += uncertainty_eval
 
         return eval
@@ -316,8 +336,11 @@ cdef class RbfnApproximator(BaseFunctionApproximator):
         cdef size_t n_input_dims
         cdef size_t center_id
         cdef size_t entry_id
+        cdef DoubleArray input
 
         # TODO error checking
+        # WARNING, this works on trajectories, where are the entry value
+        # are the same (reward at the end)
 
         trajectory_size = <double>len(entries)
 
@@ -533,8 +556,11 @@ def unpickle_RbfnApproximator(
         exploration_sampling_factor,
         process_uncertainty_rate,
         center_relocalization_rate,
-        epsilon
+        epsilon,
+        min_at_inf_factor
         ):
+    cdef object approximator
+
     # TODO need error checking here.
     approximator = RbfnApproximator(rbfn)
 
@@ -548,6 +574,7 @@ def unpickle_RbfnApproximator(
     approximator.process_uncertainty_rate = process_uncertainty_rate
     approximator.center_relocalization_rate = center_relocalization_rate
     approximator.epsilon = epsilon
+    approximator.min_at_inf_factor = min_at_inf_factor
 
     return approximator
 

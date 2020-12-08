@@ -1,3 +1,5 @@
+# cython: warn.undeclared = True
+
 cimport cython
 
 from rockefeg.policyopt.value_target cimport new_TotalRewardTargetSetter

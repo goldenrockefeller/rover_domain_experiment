@@ -20,6 +20,8 @@ from mean_fitness_critic import MeanSumFitnessCriticSystem, MeanSumFitnessCritic
 from mean_fitness_critic import TransferFitnessCriticSystem, AlternatingFitnessCriticSystem
 
 
+from mlp import TorchMlp
+
 from rbfn_approximator import RbfnApproximator
 
 # from novelty import EvolvingSystemWithNoveltySearch
@@ -33,7 +35,7 @@ import numpy as np
 
 def trial_setup():
     arg_dict = {}
-    experiment_name = "nope" 
+    experiment_name = "Test2" 
     n_req = 4
     n_rovers = 15
     base_poi_value = 1.
@@ -100,6 +102,80 @@ def trial_setup():
     arg_dict["n_state_action_dims"] = n_state_dims + n_action_dims
     
     return arg_dict
+
+def torch_mlp(arg_dict):
+    multiagent_system = arg_dict["trial"].system
+    
+    agent_systems = multiagent_system.agent_systems()
+    
+    n_state_dims = 8
+    n_action_dims = 2
+    n_policy_hidden_neurons = 32
+    
+    for rover_id in range(len(agent_systems)):
+        evolving_system = agent_systems[rover_id]
+        n_policies_per_agent = len(evolving_system.phenotypes())
+        evolving_system.set_phenotypes([])
+        
+        for policy_id in range(n_policies_per_agent):
+            map = TorchMlp(
+                n_state_dims, 
+                n_policy_hidden_neurons, 
+                n_action_dims)
+            map = TanhLayer(map)
+            phenotype = (DefaultPhenotype(map)) 
+                            
+            phenotype.set_mutation_rate(0.01)
+            phenotype.set_mutation_factor(1)
+            
+            evolving_system.phenotypes().append(phenotype)
+            
+def min_at_inf_transfer(arg_dict):
+    multiagent_system = arg_dict["trial"].system
+    
+    agent_systems = multiagent_system.agent_systems()
+    
+    for rover_id in range(len(agent_systems)):
+        evolving_system = agent_systems[rover_id]
+        
+        
+        n_centers = 160
+        rbfn = Rbfn(10, n_centers, 1)
+        
+        intermediate_critic = RbfnApproximator(rbfn)
+        
+        fitness_critic_system = (
+            TransferFitnessCriticSystem(
+                evolving_system,
+                intermediate_critic))
+        fitness_critic_system.n_epochs_before_switch = 2500
+                
+        fitness_critic_system.trajectory_buffer().set_capacity(50)
+        fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
+        fitness_critic_system.set_n_trajectories_per_critic_update_batch(1)
+        
+        locations = np.random.uniform(
+            [0., 0., 0., 0., 0., 0., 0., 0., -0.8, -0.8], 
+            [5., 5., 5., 5., 5., 5., 5., 5., 0.8, 0.8],
+            size = (n_centers, 10))
+        
+        intermediate_critic.set_center_locations(locations)
+        intermediate_critic.set_uncertainties(DoubleArray(1e8 * np.ones(n_centers))) # HERE
+        intermediate_critic.set_values(DoubleArray(1e3 * np.ones(n_centers)))
+        intermediate_critic.set_counters(DoubleArray(1 * np.ones(n_centers)))
+        
+        intermediate_critic.scale_multiplier = 1.
+        intermediate_critic.discount_factor = 0.999
+        intermediate_critic.exploration_incentive_factor = 0. # HERE
+        intermediate_critic.exploration_sampling_factor = 0.
+        intermediate_critic.process_uncertainty_rate = 0.0001
+        intermediate_critic.center_relocalization_rate = 0.
+        intermediate_critic.epsilon = 1e-9
+        intermediate_critic.min_at_inf_factor = 0.1
+                
+        agent_systems[rover_id] = fitness_critic_system
+        
+    
 
 def none(arg_dict):
     pass
@@ -195,6 +271,7 @@ def transfer(arg_dict):
             TransferFitnessCriticSystem(
                 evolving_system,
                 intermediate_critic))
+        fitness_critic_system.n_epochs_before_switch = 2500
                 
         fitness_critic_system.trajectory_buffer().set_capacity(50)
         fitness_critic_system.set_n_critic_update_batches_per_epoch(50)

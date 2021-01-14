@@ -62,15 +62,16 @@ cdef class MeanFitnessCriticSystem(FitnessCriticSystem):
 
                     target_entries = [None] * len(trajectory)
 
-                    fitness = 0.
-                    for experience in trajectory:
-                        fitness += experience.reward
-                    fitness /= len(trajectory)
+                    # fitness = 0.
+                    # for experience in trajectory:
+                    #     fitness += experience.reward
+                    # fitness /= len(trajectory)
 
                     for target_id in range(len(trajectory)):
                         experience = trajectory[target_id]
                         target = new_DoubleArray(1)
-                        target.view[0] = fitness
+                        # target.view[0] = fitness
+                        target.view[0] = experience.reward
                         target_entry = new_TargetEntry()
                         target_entry.input = experience
                         target_entry.target = target

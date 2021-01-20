@@ -8,21 +8,16 @@ from rockefeg.policyopt.neural_network import TanhLayer, ReluLinear, Rbfn
 from rockefeg.roverdomain.evaluator import DefaultEvaluator
 from rockefeg.roverdomain.evaluator import DifferenceEvaluator
 
-from rockefeg.policyopt.function_approximation import DifferentiableFunctionApproximator
+# from rockefeg.policyopt.function_approximation import DifferentiableFunctionApproximator
 from rockefeg.policyopt.map import DifferentiableCriticMap
-from rockefeg.policyopt.fitness_critic import FitnessCriticSystem
-from rockefeg.policyopt.value_target import TdLambdaTargetSetter
+# from rockefeg.policyopt.fitness_critic import FitnessCriticSystem
+# from rockefeg.policyopt.value_target import TdLambdaTargetSetter
 
 from rockefeg.cyutil.array import DoubleArray
 
-from mean_fitness_critic import MeanFitnessCriticSystem
-from mean_fitness_critic import MeanSumFitnessCriticSystem, MeanSumFitnessCriticSystem_0
-from mean_fitness_critic import TransferFitnessCriticSystem, AlternatingFitnessCriticSystem
-
-
 # from mlp import TorchMlp
 
-from rbfn_approximator import RbfnApproximator
+# from rbfn_approximator import RbfnApproximator
 
 # from novelty import EvolvingSystemWithNoveltySearch
 # from novelty import PhenotypeWithNoveltyScore
@@ -31,18 +26,23 @@ from trial_rover_domain import TrialRoverDomain
 
 from cauchy_phenotype import CauchyPhenotype
 
+from rockefeg.policyopt.rbf_network_approximator import RbfNetworkApproximator
+from rockefeg.policyopt.rbf_network import RbfNetwork
+from mean_fitness_critic import TrajFitnessCriticSystem
+from mean_fitness_critic import AlternatingTrajFitnessCriticSystem
+
 import numpy as np
 
 def trial_setup():
     arg_dict = {}
-    experiment_name = "Test2" 
+    experiment_name = "AAMAS_2021_nreq_4" 
     n_req = 4
     n_rovers = 15
     base_poi_value = 1.
     n_pois = 4
     prints_score = False 
     
-    max_n_epochs = 5000  # HERE
+    max_n_epochs = 3000  # HERE
     n_steps = 50
     
     # Domain Args
@@ -83,7 +83,7 @@ def trial_setup():
                 n_action_dims)
             map.leaky_scale = 0.1
             map = TanhLayer(map)
-            phenotype = (DefaultPhenotype(map)) 
+            phenotype = (CauchyPhenotype(map)) 
                             
             phenotype.set_mutation_rate(0.01)
             phenotype.set_mutation_factor(1)
@@ -130,51 +130,7 @@ def trial_setup():
 #             
 #             evolving_system.phenotypes().append(phenotype)
             
-def min_at_inf_transfer(arg_dict):
-    multiagent_system = arg_dict["trial"].system
-    
-    agent_systems = multiagent_system.agent_systems()
-    
-    for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems[rover_id]
-        
-        
-        n_centers = 160
-        rbfn = Rbfn(10, n_centers, 1)
-        
-        intermediate_critic = RbfnApproximator(rbfn)
-        
-        fitness_critic_system = (
-            TransferFitnessCriticSystem(
-                evolving_system,
-                intermediate_critic))
-        fitness_critic_system.n_epochs_before_switch = 2500
-                
-        fitness_critic_system.trajectory_buffer().set_capacity(50)
-        fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
-        fitness_critic_system.set_n_trajectories_per_critic_update_batch(1)
-        
-        locations = np.random.uniform(
-            [0., 0., 0., 0., 0., 0., 0., 0., -0.8, -0.8], 
-            [5., 5., 5., 5., 5., 5., 5., 5., 0.8, 0.8],
-            size = (n_centers, 10))
-        
-        intermediate_critic.set_center_locations(locations)
-        intermediate_critic.set_uncertainties(DoubleArray(1e8 * np.ones(n_centers))) # HERE
-        intermediate_critic.set_values(DoubleArray(1e3 * np.ones(n_centers)))
-        intermediate_critic.set_counters(DoubleArray(1 * np.ones(n_centers)))
-        
-        intermediate_critic.scale_multiplier = 1.
-        intermediate_critic.discount_factor = 0.999
-        intermediate_critic.exploration_incentive_factor = 0. # HERE
-        intermediate_critic.exploration_sampling_factor = 0.
-        intermediate_critic.process_uncertainty_rate = 0.0001
-        intermediate_critic.center_relocalization_rate = 0.
-        intermediate_critic.epsilon = 1e-9
-        intermediate_critic.min_at_inf_factor = 0.1
-                
-        agent_systems[rover_id] = fitness_critic_system
-        
+
     
 
 def none(arg_dict):
@@ -194,66 +150,7 @@ def difference_reward(arg_dict):
     evaluator.set_n_req(old_evaluator.n_req())
     evaluator.set_capture_dist(old_evaluator.capture_dist())
     
-def fitness_critic(arg_dict):
-    multiagent_system = arg_dict["trial"].system
-    
-    agent_systems = multiagent_system.agent_systems()
-    
-    for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems[rover_id]
-        
-        map = ReluLinear(10, 160, 1, True)
-        map.leaky_scale = 0.1
-        critic = DifferentiableCriticMap(map)
-        
-        intermediate_critic = DifferentiableFunctionApproximator(critic)
-        
-        fitness_critic_system = (
-            FitnessCriticSystem(
-                evolving_system,
-                intermediate_critic))
-                
-        fitness_critic_system.trajectory_buffer().set_capacity(500)
-        fitness_critic_system.critic_target_buffer().set_capacity(2500)
-        fitness_critic_system.set_n_critic_update_batches_per_epoch(20)
-        fitness_critic_system.set_n_trajectories_per_critic_update_batch(5)
-        fitness_critic_system.set_critic_update_batch_size(25)
-        
-        intermediate_critic.set_learning_rate(1e-4)
-                
-        agent_systems[rover_id] = fitness_critic_system
-        
-def mean_fitness_critic(arg_dict):
-    multiagent_system = arg_dict["trial"].system
-    
-    agent_systems = multiagent_system.agent_systems()
-    
-    for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems[rover_id]
-        
-        map = Rbfn(10, 160, 1)
-        #map.leaky_scale = 0.1
-        critic = DifferentiableCriticMap(map)
-        
-        intermediate_critic = DifferentiableFunctionApproximator(critic)
-        
-        fitness_critic_system = (
-            MeanFitnessCriticSystem(
-                evolving_system,
-                intermediate_critic))
-                
-        fitness_critic_system.trajectory_buffer().set_capacity(500)
-        fitness_critic_system.critic_target_buffer().set_capacity(2500)
-        fitness_critic_system.set_n_critic_update_batches_per_epoch(20)
-        fitness_critic_system.set_n_trajectories_per_critic_update_batch(5)
-        fitness_critic_system.set_critic_update_batch_size(25)
-        
-        intermediate_critic.set_learning_rate(1e-2)
-                
-        agent_systems[rover_id] = fitness_critic_system
-        
-        
-def transfer(arg_dict):
+def rbf_critic(arg_dict):
     multiagent_system = arg_dict["trial"].system
     
     agent_systems = multiagent_system.agent_systems()
@@ -262,57 +159,18 @@ def transfer(arg_dict):
         evolving_system = agent_systems[rover_id]
         
         
-        n_centers = 160
-        rbfn = Rbfn(10, n_centers, 1)
-        
-        intermediate_critic = RbfnApproximator(rbfn)
-        
-        fitness_critic_system = (
-            TransferFitnessCriticSystem(
-                evolving_system,
-                intermediate_critic))
-        fitness_critic_system.n_epochs_before_switch = 2500
-                
-        fitness_critic_system.trajectory_buffer().set_capacity(50)
-        fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
-        fitness_critic_system.set_n_trajectories_per_critic_update_batch(1)
-        
-        locations = np.random.uniform(
-            [0., 0., 0., 0., 0., 0., 0., 0., -0.8, -0.8], 
-            [5., 5., 5., 5., 5., 5., 5., 5., 0.8, 0.8],
-            size = (n_centers, 10))
-        
-        intermediate_critic.set_center_locations(locations)
-        intermediate_critic.set_uncertainties(DoubleArray(1e8 * np.ones(n_centers))) # HERE
-        intermediate_critic.set_values(DoubleArray(1e3 * np.ones(n_centers)))
-        intermediate_critic.set_counters(DoubleArray(1 * np.ones(n_centers)))
-        
-        intermediate_critic.scale_multiplier = 1.
-        intermediate_critic.discount_factor = 0.999
-        intermediate_critic.exploration_incentive_factor = 0. # HERE
-        intermediate_critic.exploration_sampling_factor = 0.
-        intermediate_critic.process_uncertainty_rate = 0.0001
-        intermediate_critic.center_relocalization_rate = 0.
-        intermediate_critic.epsilon = 1e-9
-                
-        agent_systems[rover_id] = fitness_critic_system
-        
-def alternate(arg_dict):
-    multiagent_system = arg_dict["trial"].system
-    
-    agent_systems = multiagent_system.agent_systems()
-    
-    for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems[rover_id]
+        n_centers = 16
+        rbfn = RbfNetwork(10, n_centers, 1)
+        for center_id in range(n_centers):
+            rbfn.set_center_shape(center_id, DoubleArray(1 * np.ones(10)))
         
         
-        n_centers = 160
-        rbfn = Rbfn(10, n_centers, 1)
-        
-        intermediate_critic = RbfnApproximator(rbfn)
+        intermediate_critic = RbfNetworkApproximator(rbfn)
+        intermediate_critic.set_eval_offset(1.)
+        intermediate_critic.set_info_retention_factor(0.99)
         
         fitness_critic_system = (
-            AlternatingFitnessCriticSystem(
+            TrajFitnessCriticSystem(
                 evolving_system,
                 intermediate_critic))
                 
@@ -320,27 +178,9 @@ def alternate(arg_dict):
         fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
         fitness_critic_system.set_n_trajectories_per_critic_update_batch(1)
         
-        locations = np.random.uniform(
-            [0., 0., 0., 0., 0., 0., 0., 0., -0.8, -0.8], 
-            [5., 5., 5., 5., 5., 5., 5., 5., 0.8, 0.8],
-            size = (n_centers, 10))
-        
-        intermediate_critic.set_center_locations(locations)
-        intermediate_critic.set_uncertainties(DoubleArray(1e8 * np.ones(n_centers))) # HERE
-        intermediate_critic.set_values(DoubleArray(1e3 * np.ones(n_centers)))
-        intermediate_critic.set_counters(DoubleArray(1 * np.ones(n_centers)))
-        
-        intermediate_critic.scale_multiplier = 1.
-        intermediate_critic.discount_factor = 0.999
-        intermediate_critic.exploration_incentive_factor = 0. # HERE
-        intermediate_critic.exploration_sampling_factor = 0.
-        intermediate_critic.process_uncertainty_rate = 0.0001
-        intermediate_critic.center_relocalization_rate = 0.
-        intermediate_critic.epsilon = 1e-9
-                
         agent_systems[rover_id] = fitness_critic_system
         
-def rbfn_fitness_critic(arg_dict):
+def alt_rbf_critic(arg_dict):
     multiagent_system = arg_dict["trial"].system
     
     agent_systems = multiagent_system.agent_systems()
@@ -349,13 +189,18 @@ def rbfn_fitness_critic(arg_dict):
         evolving_system = agent_systems[rover_id]
         
         
-        n_centers = 160
-        rbfn = Rbfn(10, n_centers, 1)
+        n_centers = 16
+        rbfn = RbfNetwork(10, n_centers, 1)
+        for center_id in range(n_centers):
+            rbfn.set_center_shape(center_id, DoubleArray(1 * np.ones(10)))
         
-        intermediate_critic = RbfnApproximator(rbfn)
+        
+        intermediate_critic = RbfNetworkApproximator(rbfn)
+        intermediate_critic.set_eval_offset(1.)
+        intermediate_critic.set_info_retention_factor(0.99)
         
         fitness_critic_system = (
-            MeanFitnessCriticSystem(
+            AlternatingTrajFitnessCriticSystemTrajFitnessCriticSystem(
                 evolving_system,
                 intermediate_critic))
                 
@@ -363,112 +208,331 @@ def rbfn_fitness_critic(arg_dict):
         fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
         fitness_critic_system.set_n_trajectories_per_critic_update_batch(1)
         
-        locations = np.random.uniform(
-            [0., 0., 0., 0., 0., 0., 0., 0., -0.8, -0.8], 
-            [5., 5., 5., 5., 5., 5., 5., 5., 0.8, 0.8],
-            size = (n_centers, 10))
-        
-        intermediate_critic.set_center_locations(locations)
-        intermediate_critic.set_uncertainties(DoubleArray(1e8 * np.ones(n_centers))) # HERE
-        intermediate_critic.set_values(DoubleArray(1e3 * np.ones(n_centers)))
-        intermediate_critic.set_counters(DoubleArray(1 * np.ones(n_centers)))
-        
-        intermediate_critic.scale_multiplier = 1.
-        intermediate_critic.discount_factor = 0.999
-        intermediate_critic.exploration_incentive_factor = 1. # HERE
-        intermediate_critic.exploration_sampling_factor = 1.
-        intermediate_critic.process_uncertainty_rate = 0.0001
-        intermediate_critic.center_relocalization_rate = 0.
-        intermediate_critic.epsilon = 1e-9
-                
         agent_systems[rover_id] = fitness_critic_system
-        
-def rbfn_fitness_critic_noisier(arg_dict):
-    multiagent_system = arg_dict["trial"].system
     
-    agent_systems = multiagent_system.agent_systems()
-    
-    for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems[rover_id]
-        
-        
-        n_centers = 160
-        rbfn = Rbfn(10, n_centers, 1)
-        
-        intermediate_critic = RbfnApproximator(rbfn)
-        
-        fitness_critic_system = (
-            MeanFitnessCriticSystem(
-                evolving_system,
-                intermediate_critic))
-                
-        fitness_critic_system.trajectory_buffer().set_capacity(50)
-        fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
-        fitness_critic_system.set_n_trajectories_per_critic_update_batch(1)
-        
-        locations = np.random.uniform(
-            [0., 0., 0., 0., 0., 0., 0., 0., -0.8, -0.8], 
-            [5., 5., 5., 5., 5., 5., 5., 5., 0.8, 0.8],
-            size = (n_centers, 10))
-        
-        intermediate_critic.set_center_locations(locations)
-        intermediate_critic.set_uncertainties(DoubleArray(1e8 * np.ones(n_centers))) # HERE
-        intermediate_critic.set_values(DoubleArray(1e3 * np.ones(n_centers)))
-        intermediate_critic.set_counters(DoubleArray(1 * np.ones(n_centers)))
-        
-        intermediate_critic.scale_multiplier = 1.
-        intermediate_critic.discount_factor = 0.999
-        intermediate_critic.exploration_incentive_factor = 1. # HERE
-        intermediate_critic.exploration_sampling_factor = 1.
-        intermediate_critic.process_uncertainty_rate = 0.001
-        intermediate_critic.center_relocalization_rate = 0.
-        intermediate_critic.epsilon = 1e-9
-                
-        agent_systems[rover_id] = fitness_critic_system
-        
-        
-def rbfn_fitness_critic_0(arg_dict):
-    multiagent_system = arg_dict["trial"].system
-    
-    agent_systems = multiagent_system.agent_systems()
-    
-    for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems[rover_id]
-        
-        
-        n_centers = 160
-        rbfn = Rbfn(10, n_centers, 1)
-        
-        intermediate_critic = RbfnApproximator(rbfn)
-        
-        fitness_critic_system = (
-            MeanFitnessCriticSystem(
-                evolving_system,
-                intermediate_critic))
-                
-        fitness_critic_system.trajectory_buffer().set_capacity(50)
-        fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
-        fitness_critic_system.set_n_trajectories_per_critic_update_batch(1)
-        
-        locations = np.random.uniform(
-            [0., 0., 0., 0., 0., 0., 0., 0., -0.8, -0.8], 
-            [5., 5., 5., 5., 5., 5., 5., 5., 0.8, 0.8],
-            size = (n_centers, 10))
-        
-        intermediate_critic.set_center_locations(locations)
-        intermediate_critic.set_uncertainties(DoubleArray(1e8 * np.ones(n_centers))) # HERE
-        intermediate_critic.set_values(DoubleArray(1e3 * np.ones(n_centers)))
-        intermediate_critic.set_counters(DoubleArray(1 * np.ones(n_centers)))
-        
-        intermediate_critic.scale_multiplier = 1.
-        intermediate_critic.discount_factor = 0.999
-        intermediate_critic.exploration_incentive_factor = 0. # HERE
-        intermediate_critic.exploration_sampling_factor = 0.
-        intermediate_critic.process_uncertainty_rate = 0.0001
-        intermediate_critic.center_relocalization_rate = 0.
-        intermediate_critic.epsilon = 1e-9
-                
-        agent_systems[rover_id] = fitness_critic_system
+# def min_at_inf_transfer(arg_dict):
+#     multiagent_system = arg_dict["trial"].system
+#     
+#     agent_systems = multiagent_system.agent_systems()
+#     
+#     for rover_id in range(len(agent_systems)):
+#         evolving_system = agent_systems[rover_id]
+#         
+#         
+#         n_centers = 160
+#         rbfn = Rbfn(10, n_centers, 1)
+#         
+#         intermediate_critic = RbfnApproximator(rbfn)
+#         
+#         fitness_critic_system = (
+#             TransferFitnessCriticSystem(
+#                 evolving_system,
+#                 intermediate_critic))
+#         fitness_critic_system.n_epochs_before_switch = 2500
+#                 
+#         fitness_critic_system.trajectory_buffer().set_capacity(50)
+#         fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
+#         fitness_critic_system.set_n_trajectories_per_critic_update_batch(1)
+#         
+#         locations = np.random.uniform(
+#             [0., 0., 0., 0., 0., 0., 0., 0., -0.8, -0.8], 
+#             [5., 5., 5., 5., 5., 5., 5., 5., 0.8, 0.8],
+#             size = (n_centers, 10))
+#         
+#         intermediate_critic.set_center_locations(locations)
+#         intermediate_critic.set_uncertainties(DoubleArray(1e8 * np.ones(n_centers))) # HERE
+#         intermediate_critic.set_values(DoubleArray(1e3 * np.ones(n_centers)))
+#         intermediate_critic.set_counters(DoubleArray(1 * np.ones(n_centers)))
+#         
+#         intermediate_critic.scale_multiplier = 1.
+#         intermediate_critic.discount_factor = 0.999
+#         intermediate_critic.exploration_incentive_factor = 0. # HERE
+#         intermediate_critic.exploration_sampling_factor = 0.
+#         intermediate_critic.process_uncertainty_rate = 0.0001
+#         intermediate_critic.center_relocalization_rate = 0.
+#         intermediate_critic.epsilon = 1e-9
+#         intermediate_critic.min_at_inf_factor = 0.1
+#                 
+#         agent_systems[rover_id] = fitness_critic_system
+#             
+#     
+# def fitness_critic(arg_dict):
+#     multiagent_system = arg_dict["trial"].system
+#     
+#     agent_systems = multiagent_system.agent_systems()
+#     
+#     for rover_id in range(len(agent_systems)):
+#         evolving_system = agent_systems[rover_id]
+#         
+#         map = ReluLinear(10, 160, 1, True)
+#         map.leaky_scale = 0.1
+#         critic = DifferentiableCriticMap(map)
+#         
+#         intermediate_critic = DifferentiableFunctionApproximator(critic)
+#         
+#         fitness_critic_system = (
+#             FitnessCriticSystem(
+#                 evolving_system,
+#                 intermediate_critic))
+#                 
+#         fitness_critic_system.trajectory_buffer().set_capacity(500)
+#         fitness_critic_system.critic_target_buffer().set_capacity(2500)
+#         fitness_critic_system.set_n_critic_update_batches_per_epoch(20)
+#         fitness_critic_system.set_n_trajectories_per_critic_update_batch(5)
+#         fitness_critic_system.set_critic_update_batch_size(25)
+#         
+#         intermediate_critic.set_learning_rate(1e-4)
+#                 
+#         agent_systems[rover_id] = fitness_critic_system
+#         
+# def mean_fitness_critic(arg_dict):
+#     multiagent_system = arg_dict["trial"].system
+#     
+#     agent_systems = multiagent_system.agent_systems()
+#     
+#     for rover_id in range(len(agent_systems)):
+#         evolving_system = agent_systems[rover_id]
+#         
+#         map = Rbfn(10, 160, 1)
+#         #map.leaky_scale = 0.1
+#         critic = DifferentiableCriticMap(map)
+#         
+#         intermediate_critic = DifferentiableFunctionApproximator(critic)
+#         
+#         fitness_critic_system = (
+#             MeanFitnessCriticSystem(
+#                 evolving_system,
+#                 intermediate_critic))
+#                 
+#         fitness_critic_system.trajectory_buffer().set_capacity(500)
+#         fitness_critic_system.critic_target_buffer().set_capacity(2500)
+#         fitness_critic_system.set_n_critic_update_batches_per_epoch(20)
+#         fitness_critic_system.set_n_trajectories_per_critic_update_batch(5)
+#         fitness_critic_system.set_critic_update_batch_size(25)
+#         
+#         intermediate_critic.set_learning_rate(1e-2)
+#                 
+#         agent_systems[rover_id] = fitness_critic_system
+#         
+#         
+# def transfer(arg_dict):
+#     multiagent_system = arg_dict["trial"].system
+#     
+#     agent_systems = multiagent_system.agent_systems()
+#     
+#     for rover_id in range(len(agent_systems)):
+#         evolving_system = agent_systems[rover_id]
+#         
+#         
+#         n_centers = 160
+#         rbfn = Rbfn(10, n_centers, 1)
+#         
+#         intermediate_critic = RbfnApproximator(rbfn)
+#         
+#         fitness_critic_system = (
+#             TransferFitnessCriticSystem(
+#                 evolving_system,
+#                 intermediate_critic))
+#         fitness_critic_system.n_epochs_before_switch = 2500
+#                 
+#         fitness_critic_system.trajectory_buffer().set_capacity(50)
+#         fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
+#         fitness_critic_system.set_n_trajectories_per_critic_update_batch(1)
+#         
+#         locations = np.random.uniform(
+#             [0., 0., 0., 0., 0., 0., 0., 0., -0.8, -0.8], 
+#             [5., 5., 5., 5., 5., 5., 5., 5., 0.8, 0.8],
+#             size = (n_centers, 10))
+#         
+#         intermediate_critic.set_center_locations(locations)
+#         intermediate_critic.set_uncertainties(DoubleArray(1e8 * np.ones(n_centers))) # HERE
+#         intermediate_critic.set_values(DoubleArray(1e3 * np.ones(n_centers)))
+#         intermediate_critic.set_counters(DoubleArray(1 * np.ones(n_centers)))
+#         
+#         intermediate_critic.scale_multiplier = 1.
+#         intermediate_critic.discount_factor = 0.999
+#         intermediate_critic.exploration_incentive_factor = 0. # HERE
+#         intermediate_critic.exploration_sampling_factor = 0.
+#         intermediate_critic.process_uncertainty_rate = 0.0001
+#         intermediate_critic.center_relocalization_rate = 0.
+#         intermediate_critic.epsilon = 1e-9
+#                 
+#         agent_systems[rover_id] = fitness_critic_system
+#         
+# def alternate(arg_dict):
+#     multiagent_system = arg_dict["trial"].system
+#     
+#     agent_systems = multiagent_system.agent_systems()
+#     
+#     for rover_id in range(len(agent_systems)):
+#         evolving_system = agent_systems[rover_id]
+#         
+#         
+#         n_centers = 160
+#         rbfn = Rbfn(10, n_centers, 1)
+#         
+#         intermediate_critic = RbfnApproximator(rbfn)
+#         
+#         fitness_critic_system = (
+#             AlternatingFitnessCriticSystem(
+#                 evolving_system,
+#                 intermediate_critic))
+#                 
+#         fitness_critic_system.trajectory_buffer().set_capacity(50)
+#         fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
+#         fitness_critic_system.set_n_trajectories_per_critic_update_batch(1)
+#         
+#         locations = np.random.uniform(
+#             [0., 0., 0., 0., 0., 0., 0., 0., -0.8, -0.8], 
+#             [5., 5., 5., 5., 5., 5., 5., 5., 0.8, 0.8],
+#             size = (n_centers, 10))
+#         
+#         intermediate_critic.set_center_locations(locations)
+#         intermediate_critic.set_uncertainties(DoubleArray(1e8 * np.ones(n_centers))) # HERE
+#         intermediate_critic.set_values(DoubleArray(1e3 * np.ones(n_centers)))
+#         intermediate_critic.set_counters(DoubleArray(1 * np.ones(n_centers)))
+#         
+#         intermediate_critic.scale_multiplier = 1.
+#         intermediate_critic.discount_factor = 0.999
+#         intermediate_critic.exploration_incentive_factor = 0. # HERE
+#         intermediate_critic.exploration_sampling_factor = 0.
+#         intermediate_critic.process_uncertainty_rate = 0.0001
+#         intermediate_critic.center_relocalization_rate = 0.
+#         intermediate_critic.epsilon = 1e-9
+#                 
+#         agent_systems[rover_id] = fitness_critic_system
+#         
+# def rbfn_fitness_critic(arg_dict):
+#     multiagent_system = arg_dict["trial"].system
+#     
+#     agent_systems = multiagent_system.agent_systems()
+#     
+#     for rover_id in range(len(agent_systems)):
+#         evolving_system = agent_systems[rover_id]
+#         
+#         
+#         n_centers = 160
+#         rbfn = Rbfn(10, n_centers, 1)
+#         
+#         intermediate_critic = RbfnApproximator(rbfn)
+#         
+#         fitness_critic_system = (
+#             MeanFitnessCriticSystem(
+#                 evolving_system,
+#                 intermediate_critic))
+#                 
+#         fitness_critic_system.trajectory_buffer().set_capacity(50)
+#         fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
+#         fitness_critic_system.set_n_trajectories_per_critic_update_batch(1)
+#         
+#         locations = np.random.uniform(
+#             [0., 0., 0., 0., 0., 0., 0., 0., -0.8, -0.8], 
+#             [5., 5., 5., 5., 5., 5., 5., 5., 0.8, 0.8],
+#             size = (n_centers, 10))
+#         
+#         intermediate_critic.set_center_locations(locations)
+#         intermediate_critic.set_uncertainties(DoubleArray(1e8 * np.ones(n_centers))) # HERE
+#         intermediate_critic.set_values(DoubleArray(1e3 * np.ones(n_centers)))
+#         intermediate_critic.set_counters(DoubleArray(1 * np.ones(n_centers)))
+#         
+#         intermediate_critic.scale_multiplier = 1.
+#         intermediate_critic.discount_factor = 0.999
+#         intermediate_critic.exploration_incentive_factor = 1. # HERE
+#         intermediate_critic.exploration_sampling_factor = 1.
+#         intermediate_critic.process_uncertainty_rate = 0.0001
+#         intermediate_critic.center_relocalization_rate = 0.
+#         intermediate_critic.epsilon = 1e-9
+#                 
+#         agent_systems[rover_id] = fitness_critic_system
+#         
+# def rbfn_fitness_critic_noisier(arg_dict):
+#     multiagent_system = arg_dict["trial"].system
+#     
+#     agent_systems = multiagent_system.agent_systems()
+#     
+#     for rover_id in range(len(agent_systems)):
+#         evolving_system = agent_systems[rover_id]
+#         
+#         
+#         n_centers = 160
+#         rbfn = Rbfn(10, n_centers, 1)
+#         
+#         intermediate_critic = RbfnApproximator(rbfn)
+#         
+#         fitness_critic_system = (
+#             MeanFitnessCriticSystem(
+#                 evolving_system,
+#                 intermediate_critic))
+#                 
+#         fitness_critic_system.trajectory_buffer().set_capacity(50)
+#         fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
+#         fitness_critic_system.set_n_trajectories_per_critic_update_batch(1)
+#         
+#         locations = np.random.uniform(
+#             [0., 0., 0., 0., 0., 0., 0., 0., -0.8, -0.8], 
+#             [5., 5., 5., 5., 5., 5., 5., 5., 0.8, 0.8],
+#             size = (n_centers, 10))
+#         
+#         intermediate_critic.set_center_locations(locations)
+#         intermediate_critic.set_uncertainties(DoubleArray(1e8 * np.ones(n_centers))) # HERE
+#         intermediate_critic.set_values(DoubleArray(1e3 * np.ones(n_centers)))
+#         intermediate_critic.set_counters(DoubleArray(1 * np.ones(n_centers)))
+#         
+#         intermediate_critic.scale_multiplier = 1.
+#         intermediate_critic.discount_factor = 0.999
+#         intermediate_critic.exploration_incentive_factor = 1. # HERE
+#         intermediate_critic.exploration_sampling_factor = 1.
+#         intermediate_critic.process_uncertainty_rate = 0.001
+#         intermediate_critic.center_relocalization_rate = 0.
+#         intermediate_critic.epsilon = 1e-9
+#                 
+#         agent_systems[rover_id] = fitness_critic_system
+#         
+#         
+# def rbfn_fitness_critic_0(arg_dict):
+#     multiagent_system = arg_dict["trial"].system
+#     
+#     agent_systems = multiagent_system.agent_systems()
+#     
+#     for rover_id in range(len(agent_systems)):
+#         evolving_system = agent_systems[rover_id]
+#         
+#         
+#         n_centers = 160
+#         rbfn = Rbfn(10, n_centers, 1)
+#         
+#         intermediate_critic = RbfnApproximator(rbfn)
+#         
+#         fitness_critic_system = (
+#             MeanFitnessCriticSystem(
+#                 evolving_system,
+#                 intermediate_critic))
+#                 
+#         fitness_critic_system.trajectory_buffer().set_capacity(50)
+#         fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
+#         fitness_critic_system.set_n_trajectories_per_critic_update_batch(1)
+#         
+#         locations = np.random.uniform(
+#             [0., 0., 0., 0., 0., 0., 0., 0., -0.8, -0.8], 
+#             [5., 5., 5., 5., 5., 5., 5., 5., 0.8, 0.8],
+#             size = (n_centers, 10))
+#         
+#         intermediate_critic.set_center_locations(locations)
+#         intermediate_critic.set_uncertainties(DoubleArray(1e8 * np.ones(n_centers))) # HERE
+#         intermediate_critic.set_values(DoubleArray(1e3 * np.ones(n_centers)))
+#         intermediate_critic.set_counters(DoubleArray(1 * np.ones(n_centers)))
+#         
+#         intermediate_critic.scale_multiplier = 1.
+#         intermediate_critic.discount_factor = 0.999
+#         intermediate_critic.exploration_incentive_factor = 0. # HERE
+#         intermediate_critic.exploration_sampling_factor = 0.
+#         intermediate_critic.process_uncertainty_rate = 0.0001
+#         intermediate_critic.center_relocalization_rate = 0.
+#         intermediate_critic.epsilon = 1e-9
+#                 
+#         agent_systems[rover_id] = fitness_critic_system
+
+
 # def mean_robust_fitness_critic(arg_dict):
 #     multiagent_system = arg_dict["trial"].system
 #     

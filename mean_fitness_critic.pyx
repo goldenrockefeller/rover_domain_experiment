@@ -13,7 +13,7 @@ from rockefeg.cyutil.array cimport DoubleArray, new_DoubleArray
 
 from rockefeg.policyopt.fitness_critic cimport FitnessCriticSystem, init_FitnessCriticSystem
 
-
+import numpy as np
 from typing import List
 
 
@@ -87,6 +87,65 @@ cdef class MeanFitnessCriticSystem(FitnessCriticSystem):
         system = self.super_system()
         system.prep_for_epoch()
 
+cdef class TrajFitnessCriticSystem(FitnessCriticSystem):
+
+    @cython.locals(trajectory = list, target_entries = list)
+    cpdef void prep_for_epoch(self) except *:
+        cdef Py_ssize_t batch_id
+        cdef Py_ssize_t trajectory_id
+        cdef Py_ssize_t target_id
+        cdef Py_ssize_t n_trajectories_per_batch
+        cdef Py_ssize_t n_batches
+        cdef Py_ssize_t batch_size
+        cdef ShuffleBuffer trajectory_buffer
+        cdef ShuffleBuffer critic_target_buffer
+        cdef BaseValueTargetSetter value_target_setter
+        trajectory: List[ExperienceDatum]
+        target_entries: List[TargetEntry]
+        cdef TargetEntry target_entry
+        cdef BaseFunctionApproximator intermediate_critic
+        cdef ExperienceDatum experience
+        cdef BaseSystem system
+        cdef double fitness
+        cdef double error
+        cdef double mean
+        cdef double eval
+        cdef DoubleArray target
+
+        n_batches = (
+            self.n_critic_update_batches_per_epoch())
+
+        n_trajectories_per_batch = (
+            self.n_trajectories_per_critic_update_batch())
+
+        trajectory_buffer = self.trajectory_buffer()
+        critic_target_buffer = self.critic_target_buffer()
+        intermediate_critic = self.intermediate_critic()
+
+        value_target_setter = self.value_target_setter()
+
+        if not trajectory_buffer.is_empty():
+            for batch_id in range(n_batches):
+                for trajectory_id in range(n_trajectories_per_batch):
+                    trajectory = trajectory_buffer.next_shuffled_datum()
+
+
+                    target_entry = new_TargetEntry()
+                    target_entry.input = trajectory
+                    target_entry.target = 0.
+                    intermediate_critic.batch_update([target_entry])
+
+            # eval = 0.
+            # for experience in trajectory:
+            #     eval += intermediate_critic.eval(experience).view[0]
+            #
+            # #print(np.asarray(intermediate_critic.network.center_shape(0).view))
+            # print("Estimate: ", eval)
+
+
+        system = self.super_system()
+        system.prep_for_epoch()
+
 
 cdef class TransferFitnessCriticSystem(MeanFitnessCriticSystem):
     cdef public Py_ssize_t n_epochs_elapsed
@@ -134,7 +193,7 @@ cdef class TransferFitnessCriticSystem(MeanFitnessCriticSystem):
         else:
             system.receive_feedback(experience.reward)
 
-cdef class AlternatingFitnessCriticSystem(MeanFitnessCriticSystem):
+cdef class AlternatingTrajFitnessCriticSystem(TrajFitnessCriticSystem):
     cdef public Py_ssize_t n_epochs_elapsed
 
     def __init__(
@@ -145,7 +204,7 @@ cdef class AlternatingFitnessCriticSystem(MeanFitnessCriticSystem):
         self.n_epochs_elapsed = 0
 
     cpdef void prep_for_epoch(self) except *:
-        MeanFitnessCriticSystem.prep_for_epoch(self)
+        TrajFitnessCriticSystem.prep_for_epoch(self)
         self.n_epochs_elapsed += 1
 
     @cython.locals(current_trajectory = list)

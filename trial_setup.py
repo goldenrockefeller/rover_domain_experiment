@@ -200,7 +200,7 @@ def alt_rbf_critic(arg_dict):
         intermediate_critic.set_info_retention_factor(0.99)
         
         fitness_critic_system = (
-            AlternatingTrajFitnessCriticSystemTrajFitnessCriticSystem(
+            AlternatingTrajFitnessCriticSystem(
                 evolving_system,
                 intermediate_critic))
                 

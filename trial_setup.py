@@ -42,7 +42,7 @@ def trial_setup():
     n_pois = 4
     prints_score = False 
     
-    max_n_epochs = 3000  # HERE
+    max_n_epochs = 10000  # HERE
     n_steps = 50
     
     # Domain Args
@@ -159,7 +159,7 @@ def rbf_critic_g(arg_dict):
         evolving_system = agent_systems[rover_id]
         
         
-        n_centers = 16
+        n_centers = 32
         rbfn = RbfNetwork(10, n_centers, 1)
         for center_id in range(n_centers):
             rbfn.set_center_shape(center_id, DoubleArray(1 * np.ones(10)))
@@ -167,7 +167,7 @@ def rbf_critic_g(arg_dict):
         
         intermediate_critic = RbfNetworkApproximator(rbfn)
         intermediate_critic.set_eval_offset(1.)
-        intermediate_critic.set_info_retention_factor(0.99)
+        intermediate_critic.set_info_retention_factor(0.999)
         
         fitness_critic_system = (
             TrajFitnessCriticSystem(
@@ -176,7 +176,7 @@ def rbf_critic_g(arg_dict):
                 
         fitness_critic_system.trajectory_buffer().set_capacity(50)
         fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
-        fitness_critic_system.set_n_trajectories_per_critic_update_batch(1)
+        fitness_critic_system.set_n_trajectories_per_critic_update_batch(5)
         
         agent_systems[rover_id] = fitness_critic_system
         

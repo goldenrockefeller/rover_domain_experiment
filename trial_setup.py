@@ -83,7 +83,7 @@ def trial_setup():
                 n_action_dims)
             map.leaky_scale = 0.1
             map = TanhLayer(map)
-            phenotype = (CauchyPhenotype(map)) 
+            phenotype = (DefaultPhenotype(map)) 
                             
             phenotype.set_mutation_rate(0.01)
             phenotype.set_mutation_factor(1)
@@ -150,7 +150,7 @@ def difference_reward(arg_dict):
     evaluator.set_n_req(old_evaluator.n_req())
     evaluator.set_capture_dist(old_evaluator.capture_dist())
     
-def rbf_critic(arg_dict):
+def rbf_critic_g(arg_dict):
     multiagent_system = arg_dict["trial"].system
     
     agent_systems = multiagent_system.agent_systems()
@@ -180,7 +180,7 @@ def rbf_critic(arg_dict):
         
         agent_systems[rover_id] = fitness_critic_system
         
-def alt_rbf_critic(arg_dict):
+def alt_rbf_critic_g(arg_dict):
     multiagent_system = arg_dict["trial"].system
     
     agent_systems = multiagent_system.agent_systems()

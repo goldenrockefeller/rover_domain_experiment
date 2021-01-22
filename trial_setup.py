@@ -15,6 +15,8 @@ from rockefeg.policyopt.map import DifferentiableCriticMap
 
 from rockefeg.cyutil.array import DoubleArray
 
+from gru_fitness_critic import GruCriticSystem, GruApproximator
+
 # from mlp import TorchMlp
 
 # from rbfn_approximator import RbfnApproximator
@@ -42,7 +44,7 @@ def trial_setup():
     n_pois = 4
     prints_score = False 
     
-    max_n_epochs = 10000  # HERE
+    max_n_epochs = 3000  # HERE
     n_steps = 50
     
     # Domain Args
@@ -149,6 +151,31 @@ def difference_reward(arg_dict):
     
     evaluator.set_n_req(old_evaluator.n_req())
     evaluator.set_capture_dist(old_evaluator.capture_dist())
+    
+def gru_critic(arg_dict):
+    multiagent_system = arg_dict["trial"].system
+    domain = arg_dict["trial"].domain
+    
+    agent_systems = multiagent_system.agent_systems()
+    
+    for rover_id in range(len(agent_systems)):
+        evolving_system = agent_systems[rover_id]
+        
+        intermediate_critic = GruApproximator(10,32)
+        
+        fitness_critic_system = (
+            GruCriticSystem(
+                evolving_system,
+                intermediate_critic))
+                
+        fitness_critic_system.n_steps = domain.super_domain.max_n_steps()
+        
+        fitness_critic_system.trajectory_buffer().set_capacity(50)
+        fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
+        fitness_critic_system.set_n_trajectories_per_critic_update_batch(1)
+        
+        agent_systems[rover_id] = fitness_critic_system
+        
     
 def rbf_critic_l(arg_dict):
     multiagent_system = arg_dict["trial"].system

@@ -1,5 +1,8 @@
 cimport cython
-
+import datetime as dt
+import os
+import csv
+import errno
 from rockefeg.policyopt.fitness_critic cimport FitnessCriticSystem, init_FitnessCriticSystem
 
 from rockefeg.cyutil.array cimport DoubleArray, new_DoubleArray
@@ -191,7 +194,7 @@ cdef class SumGruCriticSystem(FitnessCriticSystem):
                         for param in intermediate_critic.model.parameters():
                             param -= intermediate_critic.learning_rate * param.grad
 
-            print("Estimate: ", output[:,0,0].sum())
+            # print("Estimate: ", output[:,0,0].sum())
 
 
         system = self.super_system()
@@ -283,10 +286,145 @@ cdef class FinalGruCriticSystem(FitnessCriticSystem):
                         for param in intermediate_critic.model.parameters():
                             param -= intermediate_critic.learning_rate * param.grad
 
-            print("Estimate: ", output[-1, 0, 0])
+            # print("Estimate: ", output[-1, 0, 0])
 
 
         system = self.super_system()
         system.prep_for_epoch()
 
+
+
+cdef class RecordingSumGruCriticSystem(SumGruCriticSystem):
+    cdef list estimates
+
+    def __init__(
+            self,
+            BaseSystem super_system,
+            BaseFunctionApproximator intermediate_critic):
+        FinalGruCriticSystem.__init__(self, super_system, intermediate_critic)
+        self.estimates = []
+
+    @cython.locals(trajectory = list)
+    cpdef void receive_score(self, double score) except *:
+
+
+        cdef object output
+        cdef ShuffleBuffer trajectory_buffer
+        cdef BaseFunctionApproximator intermediate_critic
+        trajectory: List[ExperienceDatum]
+
+        intermediate_critic = self.intermediate_critic()
+        trajectory_buffer = self.trajectory_buffer()
+
+
+        if not trajectory_buffer.is_empty():
+            trajectory = trajectory_buffer.next_shuffled_datum()
+
+            output = intermediate_critic.eval(trajectory)
+
+        self.estimates.append(output[:,0,0].detach().numpy().sum())
+
+        self.super_system().receive_score(score)
+
+    cpdef void output_final_log(self, log_dirname, datetime_str) except *:
+        cdef object save_filename
+        cdef Py_ssize_t entry_id
+        cdef object exc
+        cdef object save_file
+        cdef object writer
+        cdef list data
+
+        entry_id = 0
+
+        save_filename = (
+            os.path.join(
+                log_dirname,
+                "estimates",
+                "estimates_{datetime_str}.csv".format(**locals())))
+
+        # Create File Directory if it doesn't exist
+        if not os.path.exists(os.path.dirname(save_filename)):
+            try:
+                os.makedirs(os.path.dirname(save_filename))
+            except OSError as exc: # Guard against race condition
+                if exc.errno != errno.EEXIST:
+                    raise
+
+
+        with open(save_filename, 'w', newline='') as save_file:
+            writer = csv.writer(save_file)
+
+            writer.writerow(['estimates'] + self.estimates)
+
+            writer.writerow(['n_epochs_elapsed'] + list(range(len(self.estimates))))
+
+        self.super_system().output_final_log(log_dirname, datetime_str)
+
+
+
+cdef class RecordingFinalGruCriticSystem(FinalGruCriticSystem):
+    cdef list estimates
+
+    def __init__(
+            self,
+            BaseSystem super_system,
+            BaseFunctionApproximator intermediate_critic):
+        FinalGruCriticSystem.__init__(self, super_system, intermediate_critic)
+        self.estimates = []
+
+    @cython.locals(trajectory = list)
+    cpdef void receive_score(self, double score) except *:
+
+
+        cdef object output
+        cdef ShuffleBuffer trajectory_buffer
+        cdef BaseFunctionApproximator intermediate_critic
+        trajectory: List[ExperienceDatum]
+
+        intermediate_critic = self.intermediate_critic()
+        trajectory_buffer = self.trajectory_buffer()
+
+
+        if not trajectory_buffer.is_empty():
+            trajectory = trajectory_buffer.next_shuffled_datum()
+
+            output = intermediate_critic.eval(trajectory)
+
+        self.estimates.append(output.detach().numpy()[-1, 0, 0])
+
+        self.super_system().receive_score(score)
+
+    cpdef void output_final_log(self, log_dirname, datetime_str) except *:
+        cdef object save_filename
+        cdef Py_ssize_t entry_id
+        cdef object exc
+        cdef object save_file
+        cdef object writer
+        cdef list data
+
+        entry_id = 0
+
+        save_filename = (
+            os.path.join(
+                log_dirname,
+                "estimates",
+                "estimates_{datetime_str}.csv".format(**locals())))
+
+        # Create File Directory if it doesn't exist
+        if not os.path.exists(os.path.dirname(save_filename)):
+            try:
+                os.makedirs(os.path.dirname(save_filename))
+            except OSError as exc: # Guard against race condition
+                if exc.errno != errno.EEXIST:
+                    raise
+
+
+        with open(save_filename, 'w', newline='') as save_file:
+            writer = csv.writer(save_file)
+
+            writer.writerow(['estimates'] + self.estimates)
+
+            writer.writerow(['n_epochs_elapsed'] + list(range(len(self.estimates))))
+
+        self.super_system().output_final_log(log_dirname, datetime_str)
 

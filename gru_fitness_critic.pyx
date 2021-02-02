@@ -26,7 +26,7 @@ cdef class GruApproximator(BaseFunctionApproximator):
         self.n_in_dims = n_in_dims
         self.n_hidden_dims = n_hidden_dims
         self.model = torch.nn.GRU(input_size = n_in_dims, hidden_size = n_hidden_dims).double()
-        self.learning_rate = 1.e-4
+        self.learning_rate = 1.e-5
 
     # def copy(self, copy_obj = None):
     #     new_mlp = (
@@ -109,7 +109,7 @@ cdef class GruApproximator(BaseFunctionApproximator):
 
 
 
-cdef class GruCriticSystem(FitnessCriticSystem):
+cdef class SumGruCriticSystem(FitnessCriticSystem):
     cdef public Py_ssize_t n_steps
 
     def __init__(
@@ -141,7 +141,7 @@ cdef class GruCriticSystem(FitnessCriticSystem):
 
         if len(current_trajectory) == self.n_steps:
             output_np = intermediate_critic.eval(current_trajectory).detach().numpy()
-            system.receive_feedback(output_np[:, 0].sum())
+            system.receive_feedback(output_np[:, 0, 0].sum())
         else:
             system.receive_feedback(0.)
         pass
@@ -184,12 +184,106 @@ cdef class GruCriticSystem(FitnessCriticSystem):
                     output = intermediate_critic.eval(trajectory)
 
                     intermediate_critic.model.zero_grad()
-                    loss = (output[:,0].sum() - fitness) ** 2
+                    loss = (output[:,0,0].sum() - fitness) ** 2
                     loss.backward()
 
                     with torch.no_grad():
                         for param in intermediate_critic.model.parameters():
                             param -= intermediate_critic.learning_rate * param.grad
+
+            print("Estimate: ", output[:,0,0].sum())
+
+
+        system = self.super_system()
+        system.prep_for_epoch()
+
+
+
+cdef class FinalGruCriticSystem(FitnessCriticSystem):
+    cdef public Py_ssize_t n_steps
+
+    def __init__(
+            self,
+            BaseSystem super_system,
+            BaseFunctionApproximator intermediate_critic):
+        self.n_steps = 0
+        init_FitnessCriticSystem(self, super_system, intermediate_critic)
+
+    @cython.locals(current_trajectory = list)
+    cpdef void receive_feedback(self, feedback) except *:
+        cdef ExperienceDatum experience
+        cdef BaseFunctionApproximator intermediate_critic
+        current_trajectory: List[Experience]
+        cdef BaseSystem system
+        cdef object output_np
+
+        system = self.super_system()
+
+        intermediate_critic = self.intermediate_critic()
+
+        experience = new_ExperienceDatum()
+        experience.observation = self.current_observation()
+        experience.action = self.current_action()
+        experience.reward = feedback
+
+        current_trajectory = self.current_trajectory()
+        current_trajectory.append(experience)
+
+
+
+        if len(current_trajectory) == self.n_steps:
+            output_np = intermediate_critic.eval(current_trajectory).detach().numpy()
+            system.receive_feedback(output_np[-1, 0, 0])
+        else:
+            system.receive_feedback(0.)
+        pass
+
+    @cython.locals(trajectory = list)
+    cpdef void prep_for_epoch(self) except *:
+        cdef Py_ssize_t batch_id
+        cdef Py_ssize_t trajectory_id
+        cdef Py_ssize_t n_trajectories_per_batch
+        cdef Py_ssize_t n_batches
+        cdef ExperienceDatum experience
+        cdef ShuffleBuffer trajectory_buffer
+        cdef ShuffleBuffer critic_target_buffer
+        trajectory: List[ExperienceDatum]
+        cdef GruApproximator intermediate_critic
+        cdef BaseSystem system
+        cdef double fitness
+        cdef object loss
+        cdef object output
+
+        n_batches = (
+            self.n_critic_update_batches_per_epoch())
+
+        n_trajectories_per_batch = (
+            self.n_trajectories_per_critic_update_batch())
+
+        trajectory_buffer = self.trajectory_buffer()
+        critic_target_buffer = self.critic_target_buffer()
+        intermediate_critic = self.intermediate_critic()
+
+        if not trajectory_buffer.is_empty():
+            for batch_id in range(n_batches):
+                for trajectory_id in range(n_trajectories_per_batch):
+                    trajectory = trajectory_buffer.next_shuffled_datum()
+
+                    fitness = 0.
+                    for experience in trajectory:
+                        fitness += experience.reward
+
+                    output = intermediate_critic.eval(trajectory)
+
+                    intermediate_critic.model.zero_grad()
+                    loss = (output[-1, 0, 0] - fitness) ** 2
+                    loss.backward()
+
+                    with torch.no_grad():
+                        for param in intermediate_critic.model.parameters():
+                            param -= intermediate_critic.learning_rate * param.grad
+
+            print("Estimate: ", output[-1, 0, 0])
 
 
         system = self.super_system()

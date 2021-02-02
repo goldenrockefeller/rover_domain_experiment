@@ -55,6 +55,34 @@ cdef class MeanFitnessCriticSystem(FitnessCriticSystem):
 
         value_target_setter = self.value_target_setter()
 
+        # if not trajectory_buffer.is_empty():
+        #     for batch_id in range(n_batches):
+        #         for trajectory_id in range(n_trajectories_per_batch):
+        #             trajectory = trajectory_buffer.next_shuffled_datum()
+        #
+        #             target_entries = [None] * len(trajectory)
+        #
+        #             fitness = 0.
+        #             for experience in trajectory:
+        #                 fitness += experience.reward
+        #             fitness /= len(trajectory)
+        #
+        #             for target_id in range(len(trajectory)):
+        #                 experience = trajectory[target_id]
+        #                 target = new_DoubleArray(1)
+        #                 target.view[0] = fitness
+        #                 # target.view[0] = experience.reward
+        #                 target_entry = new_TargetEntry()
+        #                 target_entry.input = experience
+        #                 target_entry.target = target
+        #                 target_entries[target_id] = target_entry
+        #
+        #
+        #             intermediate_critic.batch_update(target_entries)
+        #
+        #     eval = intermediate_critic.eval(experience)
+        #     #print("Estimate: ", eval.view[0])
+
         if not trajectory_buffer.is_empty():
             for batch_id in range(n_batches):
                 for trajectory_id in range(n_trajectories_per_batch):
@@ -62,16 +90,25 @@ cdef class MeanFitnessCriticSystem(FitnessCriticSystem):
 
                     target_entries = [None] * len(trajectory)
 
-                    # fitness = 0.
-                    # for experience in trajectory:
-                    #     fitness += experience.reward
-                    # fitness /= len(trajectory)
+                    fitness = 0.
+                    for experience in trajectory:
+                        fitness += experience.reward
+
+                    mean = 0.
+                    for experience in trajectory:
+                        mean += intermediate_critic.eval(experience).view[0]
+                    mean /= len(trajectory)
+
+                    error = fitness - mean
 
                     for target_id in range(len(trajectory)):
                         experience = trajectory[target_id]
                         target = new_DoubleArray(1)
-                        # target.view[0] = fitness
-                        target.view[0] = experience.reward
+                        target.view[0] = (
+                            intermediate_critic.eval(experience).view[0]
+                            + error
+                        )
+                        # target.view[0] = experience.reward
                         target_entry = new_TargetEntry()
                         target_entry.input = experience
                         target_entry.target = target
@@ -80,8 +117,8 @@ cdef class MeanFitnessCriticSystem(FitnessCriticSystem):
 
                     intermediate_critic.batch_update(target_entries)
 
-            eval = intermediate_critic.eval(experience)
-            #print("Estimate: ", eval.view[0])
+
+            print("Estimate: ",mean)
 
 
         system = self.super_system()

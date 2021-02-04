@@ -301,7 +301,7 @@ cdef class RecordingSumGruCriticSystem(SumGruCriticSystem):
             self,
             BaseSystem super_system,
             BaseFunctionApproximator intermediate_critic):
-        FinalGruCriticSystem.__init__(self, super_system, intermediate_critic)
+        SumGruCriticSystem.__init__(self, super_system, intermediate_critic)
         self.estimates = []
 
     @cython.locals(trajectory = list)

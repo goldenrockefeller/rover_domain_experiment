@@ -405,4 +405,72 @@ cdef class RecordingMeanFitnessCriticSystem(MeanFitnessCriticSystem):
 
         self.super_system().output_final_log(log_dirname, datetime_str)
 
+cdef class RecordingTrajFitnessCriticSystem(TrajFitnessCriticSystem):
+    cdef list estimates
+
+    def __init__(
+            self,
+            BaseSystem super_system,
+            BaseFunctionApproximator intermediate_critic):
+        init_FitnessCriticSystem(self, super_system, intermediate_critic)
+        self.estimates = []
+
+    @cython.locals(trajectory = list)
+    cpdef void receive_score(self, double score) except *:
+
+        cdef double sum
+        cdef ExperienceDatum experience
+        cdef ShuffleBuffer trajectory_buffer
+        cdef BaseFunctionApproximator intermediate_critic
+        trajectory: List[ExperienceDatum]
+
+        intermediate_critic = self.intermediate_critic()
+        trajectory_buffer = self.trajectory_buffer()
+
+
+        if not trajectory_buffer.is_empty():
+            trajectory = trajectory_buffer.next_shuffled_datum()
+
+            sum = 0.
+            for experience in trajectory:
+                sum += intermediate_critic.eval(experience).view[0]
+
+        self.estimates.append(sum)
+
+        self.super_system().receive_score(score)
+
+    cpdef void output_final_log(self, log_dirname, datetime_str) except *:
+        cdef object save_filename
+        cdef Py_ssize_t entry_id
+        cdef object exc
+        cdef object save_file
+        cdef object writer
+        cdef list data
+
+        entry_id = 0
+
+        save_filename = (
+            os.path.join(
+                log_dirname,
+                "estimates",
+                "estimates_{datetime_str}.csv".format(**locals())))
+
+        # Create File Directory if it doesn't exist
+        if not os.path.exists(os.path.dirname(save_filename)):
+            try:
+                os.makedirs(os.path.dirname(save_filename))
+            except OSError as exc: # Guard against race condition
+                if exc.errno != errno.EEXIST:
+                    raise
+
+
+        with open(save_filename, 'w', newline='') as save_file:
+            writer = csv.writer(save_file)
+
+            writer.writerow(['estimates'] + self.estimates)
+
+            writer.writerow(['n_epochs_elapsed'] + list(range(len(self.estimates))))
+
+        self.super_system().output_final_log(log_dirname, datetime_str)
+
 

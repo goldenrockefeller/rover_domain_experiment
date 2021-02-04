@@ -32,7 +32,7 @@ from cauchy_phenotype import CauchyPhenotype
 from rockefeg.policyopt.rbf_network_approximator import RbfNetworkApproximator
 from rockefeg.policyopt.rbf_network import RbfNetwork
 from mean_fitness_critic import MeanFitnessCriticSystem
-from mean_fitness_critic import TrajFitnessCriticSystem
+from mean_fitness_critic import TrajFitnessCriticSystem, RecordingTrajFitnessCriticSystem
 from mean_fitness_critic import AlternatingTrajFitnessCriticSystem
 from mean_fitness_critic import RecordingMeanFitnessCriticSystem
 
@@ -40,14 +40,14 @@ import numpy as np
 
 def trial_setup():
     arg_dict = {}
-    experiment_name = "Recording" 
+    experiment_name = "1Agent1Poi_stationary_reward" 
     n_req = 1 # HERE
     n_rovers = 1 # HERE
     base_poi_value = 1.
     n_pois = 4
-    prints_score = True # HERE 
+    prints_score = False # HERE 
     
-    max_n_epochs = 40  # HERE
+    max_n_epochs = 3000  # HERE
     n_steps = 50
     
     # Domain Args
@@ -231,7 +231,6 @@ def final_gru_critic(arg_dict):
                 intermediate_critic))
                 
         fitness_critic_system.n_steps = domain.super_domain.setting_max_n_steps()
-        print("here2", domain.super_domain.max_n_steps())
         
         fitness_critic_system.trajectory_buffer().set_capacity(50)
         fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
@@ -258,8 +257,7 @@ def rec_final_gru_critic(arg_dict):
                 RecordingFinalGruCriticSystem(
                     evolving_system,
                     intermediate_critic))
-        else:
-                
+        else: 
             fitness_critic_system = (
                 FinalGruCriticSystem(
                     evolving_system,
@@ -268,15 +266,14 @@ def rec_final_gru_critic(arg_dict):
 
                 
         fitness_critic_system.n_steps = domain.super_domain.setting_max_n_steps()
-        print("here2", domain.super_domain.max_n_steps())
-        
+
         fitness_critic_system.trajectory_buffer().set_capacity(50)
         fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
         fitness_critic_system.set_n_trajectories_per_critic_update_batch(1)
         
         agent_systems[rover_id] = fitness_critic_system
     
-def rbf_critic_l(arg_dict):
+def rbf_critic(arg_dict):
     multiagent_system = arg_dict["trial"].system
     
     agent_systems = multiagent_system.agent_systems()
@@ -305,6 +302,44 @@ def rbf_critic_l(arg_dict):
         fitness_critic_system.set_n_trajectories_per_critic_update_batch(5)
         
         agent_systems[rover_id] = fitness_critic_system
+        
+def rec_rbf_critic(arg_dict):
+    multiagent_system = arg_dict["trial"].system
+    
+    agent_systems = multiagent_system.agent_systems()
+    
+    for rover_id in range(len(agent_systems)):
+        evolving_system = agent_systems[rover_id]
+        
+        
+        n_centers = 32
+        rbfn = RbfNetwork(10, n_centers, 1)
+        for center_id in range(n_centers):
+            rbfn.set_center_shape(center_id, DoubleArray(1 * np.ones(10)))
+        
+        
+        intermediate_critic = RbfNetworkApproximator(rbfn)
+        intermediate_critic.set_eval_offset(1.)
+        intermediate_critic.set_info_retention_factor(0.999)
+        
+        
+        if rover_id == 0:
+            fitness_critic_system = (
+                RecordingTrajFitnessCriticSystem(
+                    evolving_system,
+                    intermediate_critic))
+        else:
+            fitness_critic_system = (
+                TrajFitnessCriticSystem(
+                    evolving_system,
+                    intermediate_critic))         
+                    
+        fitness_critic_system.trajectory_buffer().set_capacity(50)
+        fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
+        fitness_critic_system.set_n_trajectories_per_critic_update_batch(5)
+        
+        agent_systems[rover_id] = fitness_critic_system
+
         
 def alt_rbf_critic_l(arg_dict):
     multiagent_system = arg_dict["trial"].system
@@ -422,7 +457,7 @@ def mean_fitness_critic(arg_dict):
         map = ReluLinear(10, 160, 1, True)
         map.leaky_scale = 0.1
         critic = DifferentiableCriticMap(map)
-        print(critic.n_parameters())
+        # print(critic.n_parameters())
         
         intermediate_critic = DifferentiableFunctionApproximator(critic)
         
@@ -453,7 +488,7 @@ def rec_mean_fitness_critic(arg_dict):
         map = ReluLinear(10, 160, 1, True)
         map.leaky_scale = 0.1
         critic = DifferentiableCriticMap(map)
-        print(critic.n_parameters())
+        # print(critic.n_parameters())
         
         intermediate_critic = DifferentiableFunctionApproximator(critic)
         

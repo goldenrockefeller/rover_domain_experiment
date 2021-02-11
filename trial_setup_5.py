@@ -40,8 +40,8 @@ import numpy as np
 
 def trial_setup():
     arg_dict = {}
-    experiment_name = "15Agents4Poi_nreq_3" 
-    n_req = 3 # HERE
+    experiment_name = "15Agents4Poi_nreq_5" 
+    n_req = 5 # HERE
     n_rovers = 15 # HERE
     base_poi_value = 1.
     n_pois = 4

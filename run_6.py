@@ -1,5 +1,5 @@
 import pyximport; pyximport.install()
-from trial_setup import *
+from trial_setup_6 import *
 import random
 from shutil import copy
 import os

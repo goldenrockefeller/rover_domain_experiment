@@ -24,7 +24,7 @@ namespace rockefeg {
 	namespace policyopt {
 		ReluNetwork::ReluNetwork() : ReluNetwork::ReluNetwork(1, 1, 1) {}
 
-		ReluNetwork::ReluNetwork(size_t n_in_dims, size_t n_hidden_units, size_t n_out_dims) : leaky_scale(0.1) {
+		ReluNetwork::ReluNetwork(size_t n_in_dims, size_t n_hidden_units, size_t n_out_dims) : leaky_scale(0.01) {
 			if (n_in_dims <= 0) {
 				ostringstream msg;
 				msg << "The number of input dimensions (n_in_dims = "

@@ -42,12 +42,12 @@ import numpy as np
 
 def trial_setup():
     arg_dict = {}
-    experiment_name = "15Agents4Poi_nreq_4" # HERE 
+    experiment_name = "15Agents4Poi_nreq_4_test" # HERE 
     n_req = 4 # HERE
     n_rovers = 15 # HERE
     base_poi_value = 1.
     n_pois = 4
-    prints_score = False # HERE 
+    prints_score = True # HERE 
     
     max_n_epochs = 3000  # HERE
     n_steps = 50
@@ -88,7 +88,7 @@ def trial_setup():
                 n_state_dims, 
                 n_policy_hidden_neurons, 
                 n_action_dims)
-            map.leaky_scale = 0.1
+            map.leaky_scale = 0.0
             map = TanhLayer(map)
             phenotype = (DefaultPhenotype(map)) 
                             
@@ -456,8 +456,8 @@ def mean_fitness_critic(arg_dict):
     for rover_id in range(len(agent_systems)):
         evolving_system = agent_systems[rover_id]
         
-        map = ReluLinear(10, 160, 1, True)
-        map.leaky_scale = 0.1
+        map = ReluLinear(10, 80, 1, True)
+        map.leaky_scale = 0.01
         critic = DifferentiableCriticMap(map)
         # print(critic.n_parameters())
         
@@ -470,11 +470,11 @@ def mean_fitness_critic(arg_dict):
                 
         fitness_critic_system.trajectory_buffer().set_capacity(500)
         fitness_critic_system.critic_target_buffer().set_capacity(2500)
-        fitness_critic_system.set_n_critic_update_batches_per_epoch(20)
-        fitness_critic_system.set_n_trajectories_per_critic_update_batch(5)
-        fitness_critic_system.set_critic_update_batch_size(25)
+        fitness_critic_system.set_n_critic_update_batches_per_epoch(1)
+        fitness_critic_system.set_n_trajectories_per_critic_update_batch(50)
+        # fitness_critic_system.set_critic_update_batch_size(25)
         
-        intermediate_critic.set_learning_rate(1e-4)
+        intermediate_critic.set_learning_rate(5e-4)
                 
         agent_systems[rover_id] = fitness_critic_system
         
@@ -487,7 +487,7 @@ def relu_fitness_critic(arg_dict):
     for rover_id in range(len(agent_systems)):
         evolving_system = agent_systems[rover_id]
         
-        intermediate_critic = ReluNetworkApproximator(10, 160, 1)
+        intermediate_critic = ReluNetworkApproximator(10, 80, 1)
         
         fitness_critic_system = (
             ReluFitnessCriticSystem(
@@ -500,7 +500,7 @@ def relu_fitness_critic(arg_dict):
 
         fitness_critic_system.trajectory_buffer().set_capacity(50)
         
-        intermediate_critic.set_learning_rate(1e-6)
+        intermediate_critic.set_learning_rate(5e-3)
                 
         agent_systems[rover_id] = fitness_critic_system
         

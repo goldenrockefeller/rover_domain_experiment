@@ -121,7 +121,7 @@ cdef class MeanFitnessCriticSystem(FitnessCriticSystem):
                     intermediate_critic.batch_update(target_entries)
 
 
-            # print("Estimate: ",mean)
+            print("Estimate: ",mean)
 
 
         system = self.super_system()

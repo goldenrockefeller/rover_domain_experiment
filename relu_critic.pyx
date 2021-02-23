@@ -135,7 +135,7 @@ cdef class ReluFitnessCriticSystem(FitnessCriticSystem):
                 entry = self.entry_buffer.next_shuffled_datum()
                 approximator.update(entry)
 
-            print(approximator.eval(entry.input).view[0])
+            # print(approximator.eval(entry.input).view[0])
         system = self.super_system()
         system.prep_for_epoch()
 

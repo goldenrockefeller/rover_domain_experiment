@@ -1,4 +1,4 @@
-# cython: warn.undeclared = True
+
 import datetime as dt
 import os
 import csv

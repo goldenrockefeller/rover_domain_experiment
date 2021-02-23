@@ -42,12 +42,12 @@ import numpy as np
 
 def trial_setup():
     arg_dict = {}
-    experiment_name = "15Agents4Poi_nreq_4_test" # HERE 
+    experiment_name = "15Agents4Poi_nreq_4" # HERE 
     n_req = 4 # HERE
     n_rovers = 15 # HERE
     base_poi_value = 1.
     n_pois = 4
-    prints_score = True # HERE 
+    prints_score = False # HERE 
     
     max_n_epochs = 3000  # HERE
     n_steps = 50

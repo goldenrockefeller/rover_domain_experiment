@@ -18,6 +18,8 @@ from rockefeg.cyutil.array import DoubleArray
 from gru_fitness_critic import SumGruCriticSystem, FinalGruCriticSystem, GruApproximator
 from gru_fitness_critic import RecordingSumGruCriticSystem, RecordingFinalGruCriticSystem, GruApproximator
 
+from relu_critic import ReluNetworkApproximator, ReluFitnessCriticSystem
+
 # from mlp import TorchMlp
 
 # from rbfn_approximator import RbfnApproximator
@@ -40,8 +42,8 @@ import numpy as np
 
 def trial_setup():
     arg_dict = {}
-    experiment_name = "15Agents4Poi_nreq_3" 
-    n_req = 3 # HERE
+    experiment_name = "15Agents4Poi_nreq_4" # HERE 
+    n_req = 4 # HERE
     n_rovers = 15 # HERE
     base_poi_value = 1.
     n_pois = 4
@@ -476,6 +478,31 @@ def mean_fitness_critic(arg_dict):
                 
         agent_systems[rover_id] = fitness_critic_system
         
+        
+def relu_fitness_critic(arg_dict):
+    multiagent_system = arg_dict["trial"].system
+    
+    agent_systems = multiagent_system.agent_systems()
+    
+    for rover_id in range(len(agent_systems)):
+        evolving_system = agent_systems[rover_id]
+        
+        intermediate_critic = ReluNetworkApproximator(10, 160, 1)
+        
+        fitness_critic_system = (
+            ReluFitnessCriticSystem(
+                evolving_system,
+                intermediate_critic))
+                
+        
+        fitness_critic_system.entry_buffer.set_capacity(2500)
+        fitness_critic_system.n_updates_per_epoch = 250
+
+        fitness_critic_system.trajectory_buffer().set_capacity(50)
+        
+        intermediate_critic.set_learning_rate(1e-6)
+                
+        agent_systems[rover_id] = fitness_critic_system
         
 def rec_mean_fitness_critic(arg_dict):
     multiagent_system = arg_dict["trial"].system

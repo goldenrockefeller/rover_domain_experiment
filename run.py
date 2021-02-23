@@ -15,7 +15,7 @@ n_stat_runs = 1
 
 mods_to_mix = [
     (difference_reward,),
-    (rec_rbf_critic, rec_final_gru_critic, rec_sum_gru_critic, rec_mean_fitness_critic)
+    (relu_fitness_critic,)
 ]
 
 # rec_final_gru_critic, rec_sum_gru_critic, rec_mean_fitness_critic

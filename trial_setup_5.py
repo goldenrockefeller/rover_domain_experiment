@@ -18,6 +18,8 @@ from rockefeg.cyutil.array import DoubleArray
 from gru_fitness_critic import SumGruCriticSystem, FinalGruCriticSystem, GruApproximator
 from gru_fitness_critic import RecordingSumGruCriticSystem, RecordingFinalGruCriticSystem, GruApproximator
 
+from relu_critic import ReluNetworkApproximator, ReluFitnessCriticSystem
+
 # from mlp import TorchMlp
 
 # from rbfn_approximator import RbfnApproximator
@@ -40,8 +42,8 @@ import numpy as np
 
 def trial_setup():
     arg_dict = {}
-    experiment_name = "15Agents4Poi_nreq_6" 
-    n_req = 6 # HERE
+    experiment_name = "15Agents4Poi_nreq_5" # HERE 
+    n_req = 5 # HERE
     n_rovers = 15 # HERE
     base_poi_value = 1.
     n_pois = 4
@@ -86,7 +88,7 @@ def trial_setup():
                 n_state_dims, 
                 n_policy_hidden_neurons, 
                 n_action_dims)
-            map.leaky_scale = 0.1
+            map.leaky_scale = 0.0
             map = TanhLayer(map)
             phenotype = (DefaultPhenotype(map)) 
                             
@@ -454,8 +456,8 @@ def mean_fitness_critic(arg_dict):
     for rover_id in range(len(agent_systems)):
         evolving_system = agent_systems[rover_id]
         
-        map = ReluLinear(10, 160, 1, True)
-        map.leaky_scale = 0.1
+        map = ReluLinear(10, 80, 1, True)
+        map.leaky_scale = 0.01
         critic = DifferentiableCriticMap(map)
         # print(critic.n_parameters())
         
@@ -468,14 +470,70 @@ def mean_fitness_critic(arg_dict):
                 
         fitness_critic_system.trajectory_buffer().set_capacity(500)
         fitness_critic_system.critic_target_buffer().set_capacity(2500)
-        fitness_critic_system.set_n_critic_update_batches_per_epoch(20)
-        fitness_critic_system.set_n_trajectories_per_critic_update_batch(5)
-        fitness_critic_system.set_critic_update_batch_size(25)
+        fitness_critic_system.set_n_critic_update_batches_per_epoch(1)
+        fitness_critic_system.set_n_trajectories_per_critic_update_batch(50)
+        # fitness_critic_system.set_critic_update_batch_size(25)
         
-        intermediate_critic.set_learning_rate(1e-4)
+        intermediate_critic.set_learning_rate(5e-4)
                 
         agent_systems[rover_id] = fitness_critic_system
         
+def mean_fitness_critic_slow(arg_dict):
+    multiagent_system = arg_dict["trial"].system
+    
+    agent_systems = multiagent_system.agent_systems()
+    
+    for rover_id in range(len(agent_systems)):
+        evolving_system = agent_systems[rover_id]
+        
+        map = ReluLinear(10, 80, 1, True)
+        map.leaky_scale = 0.01
+        critic = DifferentiableCriticMap(map)
+        # print(critic.n_parameters())
+        
+        intermediate_critic = DifferentiableFunctionApproximator(critic)
+        
+        fitness_critic_system = (
+            MeanFitnessCriticSystem(
+                evolving_system,
+                intermediate_critic))
+                
+        fitness_critic_system.trajectory_buffer().set_capacity(500)
+        fitness_critic_system.critic_target_buffer().set_capacity(2500)
+        fitness_critic_system.set_n_critic_update_batches_per_epoch(1)
+        fitness_critic_system.set_n_trajectories_per_critic_update_batch(50)
+        # fitness_critic_system.set_critic_update_batch_size(25)
+        
+        intermediate_critic.set_learning_rate(5e-5)
+                
+        agent_systems[rover_id] = fitness_critic_system
+        
+        
+        
+def relu_fitness_critic(arg_dict):
+    multiagent_system = arg_dict["trial"].system
+    
+    agent_systems = multiagent_system.agent_systems()
+    
+    for rover_id in range(len(agent_systems)):
+        evolving_system = agent_systems[rover_id]
+        
+        intermediate_critic = ReluNetworkApproximator(10, 80, 1)
+        
+        fitness_critic_system = (
+            ReluFitnessCriticSystem(
+                evolving_system,
+                intermediate_critic))
+                
+        
+        fitness_critic_system.entry_buffer.set_capacity(2500)
+        fitness_critic_system.n_updates_per_epoch = 250
+
+        fitness_critic_system.trajectory_buffer().set_capacity(50)
+        
+        intermediate_critic.set_learning_rate(5e-3)
+                
+        agent_systems[rover_id] = fitness_critic_system
         
 def rec_mean_fitness_critic(arg_dict):
     multiagent_system = arg_dict["trial"].system

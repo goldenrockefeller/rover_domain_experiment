@@ -14,8 +14,8 @@ experiment_name = experiment_arg_dict["trial"].experiment_name
 n_stat_runs = 1
 
 mods_to_mix = [
-    (global_reward,),
-    (mean_fitness_critic,)
+    (global_reward, difference_reward),
+    (mean_fitness_critic, none, sum_gru_critic)
 ]
 
 # rec_final_gru_critic, rec_sum_gru_critic, rec_mean_fitness_critic

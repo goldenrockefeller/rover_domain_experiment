@@ -157,17 +157,24 @@ def difference_reward(arg_dict):
     evaluator.set_n_req(old_evaluator.n_req())
     evaluator.set_capture_dist(old_evaluator.capture_dist())
     
-def sum_gru_critic(arg_dict):
+def sum_gru_critic_2(arg_dict):
     multiagent_system = arg_dict["trial"].system
     domain = arg_dict["trial"].domain
     
     agent_systems = multiagent_system.agent_systems()
+    """
+        intermediate_critic = GruApproximator(10,32)
+        intermediate_critic.learning_rate = 1.e-5
+        fitness_critic_system.trajectory_buffer().set_capacity(50)
+        fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
+        fitness_critic_system.set_n_trajectories_per_critic_update_batch(1)
+    """
     
     for rover_id in range(len(agent_systems)):
         evolving_system = agent_systems[rover_id]
         
-        intermediate_critic = GruApproximator(10,32)
-        intermediate_critic.learning_rate = 1.e-5
+        intermediate_critic = GruApproximator(10,80)
+        intermediate_critic.learning_rate = 5.e-4
         
         fitness_critic_system = (
             SumGruCriticSystem(
@@ -176,9 +183,9 @@ def sum_gru_critic(arg_dict):
                 
         fitness_critic_system.n_steps = domain.super_domain.setting_max_n_steps()
         
-        fitness_critic_system.trajectory_buffer().set_capacity(50)
-        fitness_critic_system.set_n_critic_update_batches_per_epoch(50)
-        fitness_critic_system.set_n_trajectories_per_critic_update_batch(1)
+        fitness_critic_system.trajectory_buffer().set_capacity(500)
+        fitness_critic_system.set_n_critic_update_batches_per_epoch(1)
+        fitness_critic_system.set_n_trajectories_per_critic_update_batch(50)
         
         agent_systems[rover_id] = fitness_critic_system
         

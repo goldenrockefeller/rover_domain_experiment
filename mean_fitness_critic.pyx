@@ -5,8 +5,6 @@ import csv
 import errno
 cimport cython
 
-from goldenrockefeller.policyopt.value_target cimport new_TotalRewardTargetSetter
-from goldenrockefeller.policyopt.value_target cimport BaseValueTargetSetter
 from goldenrockefeller.policyopt.buffer cimport ShuffleBuffer, new_ShuffleBuffer
 from goldenrockefeller.policyopt.experience cimport ExperienceDatum, new_ExperienceDatum
 from goldenrockefeller.policyopt.function_approximation cimport BaseFunctionApproximator, TargetEntry, new_TargetEntry
@@ -33,7 +31,6 @@ cdef class MeanFitnessCriticSystem(FitnessCriticSystem):
         cdef Py_ssize_t batch_size
         cdef ShuffleBuffer trajectory_buffer
         cdef ShuffleBuffer critic_target_buffer
-        cdef BaseValueTargetSetter value_target_setter
         trajectory: List[ExperienceDatum]
         target_entries: List[TargetEntry]
         cdef TargetEntry target_entry
@@ -56,7 +53,6 @@ cdef class MeanFitnessCriticSystem(FitnessCriticSystem):
         critic_target_buffer = self.critic_target_buffer()
         intermediate_critic = self.intermediate_critic()
 
-        value_target_setter = self.value_target_setter()
 
         # if not trajectory_buffer.is_empty():
         #     for batch_id in range(n_batches):
@@ -139,7 +135,6 @@ cdef class TrajFitnessCriticSystem(FitnessCriticSystem):
         cdef Py_ssize_t batch_size
         cdef ShuffleBuffer trajectory_buffer
         cdef ShuffleBuffer critic_target_buffer
-        cdef BaseValueTargetSetter value_target_setter
         trajectory: List[ExperienceDatum]
         target_entries: List[TargetEntry]
         cdef TargetEntry target_entry
@@ -162,7 +157,6 @@ cdef class TrajFitnessCriticSystem(FitnessCriticSystem):
         critic_target_buffer = self.critic_target_buffer()
         intermediate_critic = self.intermediate_critic()
 
-        value_target_setter = self.value_target_setter()
 
         if not trajectory_buffer.is_empty():
             for batch_id in range(n_batches):

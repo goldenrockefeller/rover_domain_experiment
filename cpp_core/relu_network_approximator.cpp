@@ -20,7 +20,7 @@ using std::runtime_error;
 using std::make_shared;
 
 
-namespace rockefeg {
+namespace goldenrockefeller {
 	namespace policyopt {
 		ReluNetwork::ReluNetwork() : ReluNetwork::ReluNetwork(1, 1, 1) {}
 
@@ -431,4 +431,4 @@ namespace rockefeg {
 
 
 	} // namespace policyopt
-} // namespace rockefeg
+} // namespace goldenrockefeller

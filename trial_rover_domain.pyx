@@ -1,12 +1,12 @@
 cimport cython
 
-from rockefeg.policyopt.domain cimport BaseDomain
-from rockefeg.roverdomain.rover_domain cimport RoverDomain
-from rockefeg.roverdomain.state cimport State, RoverDatum, PoiDatum
-from rockefeg.roverdomain.state cimport new_RoverDatum, new_PoiDatum
-from rockefeg.cyutil.array cimport DoubleArray
+from goldenrockefeller.policyopt.domain cimport BaseDomain
+from goldenrockefeller.roverdomain.rover_domain cimport RoverDomain
+from goldenrockefeller.roverdomain.state cimport State, RoverDatum, PoiDatum
+from goldenrockefeller.roverdomain.state cimport new_RoverDatum, new_PoiDatum
+from goldenrockefeller.cyutil.array cimport DoubleArray
 
-from rockefeg.roverdomain.rover_domain import RoverDomain
+from goldenrockefeller.roverdomain.rover_domain import RoverDomain
 
 import numpy as np
 

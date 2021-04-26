@@ -6,7 +6,7 @@
 #include <memory>
 
 
-namespace rockefeg {
+namespace goldenrockefeller {
 	namespace policyopt {
 		struct ReluNetwork {
 

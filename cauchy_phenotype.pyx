@@ -1,9 +1,9 @@
 cimport cython
 
-from rockefeg.policyopt.evolution cimport DefaultPhenotype
-from rockefeg.policyopt.evolution cimport init_DefaultPhenotype
-from rockefeg.policyopt.map cimport BaseMap
-from rockefeg.cyutil.array cimport DoubleArray
+from goldenrockefeller.policyopt.evolution cimport DefaultPhenotype
+from goldenrockefeller.policyopt.evolution cimport init_DefaultPhenotype
+from goldenrockefeller.policyopt.map cimport BaseMap
+from goldenrockefeller.cyutil.array cimport DoubleArray
 
 import numpy as np
 

@@ -1,19 +1,19 @@
 import pyximport; pyximport.install()
 
-from rockefeg.policyopt.trial import Trial
-from rockefeg.policyopt.multiagent_system import MultiagentSystem
-from rockefeg.policyopt.evolution import DefaultEvolvingSystem, DefaultPhenotype
-from rockefeg.policyopt.neural_network import TanhLayer, ReluLinear, Rbfn
+from goldenrockefeller.policyopt.trial import Trial
+from goldenrockefeller.policyopt.multiagent_system import MultiagentSystem
+from goldenrockefeller.policyopt.evolution import DefaultEvolvingSystem, DefaultPhenotype
+from goldenrockefeller.policyopt.neural_network import TanhLayer, ReluLinear, Rbfn
 
-from rockefeg.roverdomain.evaluator import DefaultEvaluator
-from rockefeg.roverdomain.evaluator import DifferenceEvaluator
+from goldenrockefeller.roverdomain.evaluator import DefaultEvaluator
+from goldenrockefeller.roverdomain.evaluator import DifferenceEvaluator
 
-from rockefeg.policyopt.function_approximation import DifferentiableFunctionApproximator
-from rockefeg.policyopt.map import DifferentiableCriticMap
-from rockefeg.policyopt.fitness_critic import FitnessCriticSystem
-# from rockefeg.policyopt.value_target import TdLambdaTargetSetter
+from goldenrockefeller.policyopt.function_approximation import DifferentiableFunctionApproximator
+from goldenrockefeller.policyopt.map import DifferentiableCriticMap
+from goldenrockefeller.policyopt.fitness_critic import FitnessCriticSystem
+# from goldenrockefeller.policyopt.value_target import TdLambdaTargetSetter
 
-from rockefeg.cyutil.array import DoubleArray
+from goldenrockefeller.cyutil.array import DoubleArray
 
 from gru_fitness_critic import SumGruCriticSystem, FinalGruCriticSystem, GruApproximator
 from gru_fitness_critic import RecordingSumGruCriticSystem, RecordingFinalGruCriticSystem, GruApproximator
@@ -31,8 +31,8 @@ from trial_rover_domain import TrialRoverDomain
 
 from cauchy_phenotype import CauchyPhenotype
 
-from rockefeg.policyopt.rbf_network_approximator import RbfNetworkApproximator
-from rockefeg.policyopt.rbf_network import RbfNetwork
+from goldenrockefeller.policyopt.rbf_network_approximator import RbfNetworkApproximator
+from goldenrockefeller.policyopt.rbf_network import RbfNetwork
 from mean_fitness_critic import MeanFitnessCriticSystem
 from mean_fitness_critic import TrajFitnessCriticSystem, RecordingTrajFitnessCriticSystem
 from mean_fitness_critic import AlternatingTrajFitnessCriticSystem

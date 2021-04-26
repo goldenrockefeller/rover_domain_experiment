@@ -3,14 +3,14 @@ import datetime as dt
 import os
 import csv
 import errno
-from rockefeg.policyopt.fitness_critic cimport FitnessCriticSystem, init_FitnessCriticSystem
+from goldenrockefeller.policyopt.fitness_critic cimport FitnessCriticSystem, init_FitnessCriticSystem
 
-from rockefeg.cyutil.array cimport DoubleArray, new_DoubleArray
-from rockefeg.policyopt.experience cimport ExperienceDatum, new_ExperienceDatum
-from rockefeg.policyopt.function_approximation cimport BaseFunctionApproximator
-from rockefeg.policyopt.system cimport BaseSystem
+from goldenrockefeller.cyutil.array cimport DoubleArray, new_DoubleArray
+from goldenrockefeller.policyopt.experience cimport ExperienceDatum, new_ExperienceDatum
+from goldenrockefeller.policyopt.function_approximation cimport BaseFunctionApproximator
+from goldenrockefeller.policyopt.system cimport BaseSystem
 
-from rockefeg.policyopt.buffer cimport ShuffleBuffer, new_ShuffleBuffer
+from goldenrockefeller.policyopt.buffer cimport ShuffleBuffer, new_ShuffleBuffer
 import numpy as np
 import copy
 import torch

@@ -7,12 +7,12 @@ from cpp_relu_approximator cimport valarray
 from cpp_relu_approximator cimport ReluNetworkApproximator as CppReluNetworkApproximator
 cimport cython
 from libcpp.memory cimport shared_ptr, make_shared
-from rockefeg.cyutil.array cimport DoubleArray, new_DoubleArray
-from rockefeg.policyopt.function_approximation cimport BaseFunctionApproximator, TargetEntry, new_TargetEntry
-from rockefeg.policyopt.experience cimport ExperienceDatum
-from rockefeg.policyopt.buffer cimport ShuffleBuffer, new_ShuffleBuffer
-from rockefeg.policyopt.fitness_critic cimport FitnessCriticSystem, init_FitnessCriticSystem
-from rockefeg.policyopt.system cimport BaseSystem
+from goldenrockefeller.cyutil.array cimport DoubleArray, new_DoubleArray
+from goldenrockefeller.policyopt.function_approximation cimport BaseFunctionApproximator, TargetEntry, new_TargetEntry
+from goldenrockefeller.policyopt.experience cimport ExperienceDatum
+from goldenrockefeller.policyopt.buffer cimport ShuffleBuffer, new_ShuffleBuffer
+from goldenrockefeller.policyopt.fitness_critic cimport FitnessCriticSystem, init_FitnessCriticSystem
+from goldenrockefeller.policyopt.system cimport BaseSystem
 
 cdef valarray[double] valarray_from_DoubleArray(DoubleArray arr) except *:
     cdef valarray[double] new_arr

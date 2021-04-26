@@ -5,16 +5,16 @@ import csv
 import errno
 cimport cython
 
-from rockefeg.policyopt.value_target cimport new_TotalRewardTargetSetter
-from rockefeg.policyopt.value_target cimport BaseValueTargetSetter
-from rockefeg.policyopt.buffer cimport ShuffleBuffer, new_ShuffleBuffer
-from rockefeg.policyopt.experience cimport ExperienceDatum, new_ExperienceDatum
-from rockefeg.policyopt.function_approximation cimport BaseFunctionApproximator, TargetEntry, new_TargetEntry
-from rockefeg.policyopt.system cimport BaseSystem
-from rockefeg.cyutil.array cimport DoubleArray, new_DoubleArray
+from goldenrockefeller.policyopt.value_target cimport new_TotalRewardTargetSetter
+from goldenrockefeller.policyopt.value_target cimport BaseValueTargetSetter
+from goldenrockefeller.policyopt.buffer cimport ShuffleBuffer, new_ShuffleBuffer
+from goldenrockefeller.policyopt.experience cimport ExperienceDatum, new_ExperienceDatum
+from goldenrockefeller.policyopt.function_approximation cimport BaseFunctionApproximator, TargetEntry, new_TargetEntry
+from goldenrockefeller.policyopt.system cimport BaseSystem
+from goldenrockefeller.cyutil.array cimport DoubleArray, new_DoubleArray
 
 
-from rockefeg.policyopt.fitness_critic cimport FitnessCriticSystem, init_FitnessCriticSystem
+from goldenrockefeller.policyopt.fitness_critic cimport FitnessCriticSystem, init_FitnessCriticSystem
 
 import numpy as np
 from typing import List

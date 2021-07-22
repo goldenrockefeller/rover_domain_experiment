@@ -9,7 +9,7 @@ cdef extern from "<valarray>" namespace "std" nogil:
         T& operator[] (size_t)
 
 cdef extern from "cpp_core/relu_network_approximator.hpp" namespace "goldenrockefeller::policyopt" nogil:
-     cdef cppclass ReluNetworkApproximator:
+    cdef cppclass ReluNetworkApproximator:
         double learning_rate
 
         ReluNetworkApproximator() except +

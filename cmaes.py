@@ -162,7 +162,7 @@ class CmaesSystem(BaseEvolvingSystem):
 
         random.shuffle(phenotypes)
         self.set_phenotypes(phenotypes)
-        print(f"{self.step_size=}, {np.sum(self.mean**2)}")
+        # print(f"{self.step_size=}, {np.sum(self.mean**2)}")
 
 
 

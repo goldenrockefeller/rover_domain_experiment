@@ -14,7 +14,7 @@ from cpp_flat_critic cimport UqFlatNetworkApproximator as CppUqFlatNetworkApprox
 
 from libcpp.memory cimport shared_ptr, make_shared
 from libcpp.vector cimport vector
-from libc.math cimport isfinite
+# from libc.math cimport isfinite
 
 
 from goldenrockefeller.cyutil.array cimport DoubleArray
@@ -317,8 +317,8 @@ cdef class FlatFitnessCriticSystem(FitnessCriticSystem):
         new_feedback = intermediate_critic.eval(experience)
 
 
-        if not isfinite(new_feedback):
-            raise RuntimeError("Something went wrong: feedback is not finite.")
+        # if not isfinite(new_feedback):
+        #     raise RuntimeError("Something went wrong: feedback is not finite.")
 
         self.super_system().receive_feedback(new_feedback)
 

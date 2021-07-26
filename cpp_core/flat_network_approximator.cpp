@@ -34,7 +34,7 @@ namespace goldenrockefeller {
 
 		FlatNetwork::FlatNetwork() : FlatNetwork::FlatNetwork(1, 1) {}
 
-		FlatNetwork::FlatNetwork(size_t n_in_dims, size_t n_hidden_units) : leaky_scale(0.5) {
+		FlatNetwork::FlatNetwork(size_t n_in_dims, size_t n_hidden_units) : leaky_scale(0.1) {
 			if (n_in_dims <= 0) {
 				ostringstream msg;
 				msg << "The number of input dimensions (n_in_dims = "
@@ -67,14 +67,17 @@ namespace goldenrockefeller {
 			for (valarray<double>& weights : this->linear) {
 				for (double& weight : weights) {
 					weight = distrib(gen);
+					
 				}
 			}
 
 			for (double& val : this->bias0) {
 				val = distrib(gen);
+				
 			}
 
 			this->bias1 = distrib(gen);
+			
 		}
 
 		unique_ptr<FlatNetwork> FlatNetwork::copy() const {
@@ -83,6 +86,7 @@ namespace goldenrockefeller {
 			};
 
 			new_flat_network_core->set_parameters(this->parameters());
+			new_flat_network_core->leaky_scale = this->leaky_scale;
 
 			return move(new_flat_network_core);
 		}

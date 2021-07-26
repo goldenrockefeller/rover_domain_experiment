@@ -1,6 +1,6 @@
 
 from libcpp.vector cimport vector
-from libcpp.memory cimport shared_ptr
+from libcpp.memory cimport shared_ptr, unique_ptr
 
 cdef extern from "<valarray>" namespace "std" nogil:
     cdef cppclass valarray[T]:
@@ -15,6 +15,17 @@ cdef extern from "cpp_core/flat_network_approximator.hpp" namespace "goldenrocke
         valarray[double] observation
         valarray[double] action
         double reward
+
+    cdef cppclass FlatNetwork:
+        double leaky_scale
+
+        FlatNetwork(size_t, size_t) except +
+        unique_ptr[FlatNetwork] copy() except +
+        valarray[double] parameters() except +
+        void set_parameters(const valarray[double]&) except +
+        double eval(const valarray[double]&) except +
+        valarray[double] grad_wrt_parameters(const valarray[double]&, double) except +
+
 
     cdef cppclass FlatNetworkOptimizer:
         double time_horizon

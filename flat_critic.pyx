@@ -11,13 +11,15 @@ from cpp_flat_critic cimport MonteFlatNetworkApproximator as CppMonteFlatNetwork
 from cpp_flat_critic cimport QFlatNetworkApproximator as CppQFlatNetworkApproximator
 from cpp_flat_critic cimport UFlatNetworkApproximator as CppUFlatNetworkApproximator
 from cpp_flat_critic cimport UqFlatNetworkApproximator as CppUqFlatNetworkApproximator
+from cpp_flat_critic cimport FlatNetwork as CppFlatNetwork
 
-from libcpp.memory cimport shared_ptr, make_shared
+from libcpp.memory cimport shared_ptr, unique_ptr, make_shared
 from libcpp.vector cimport vector
+from libcpp.utility cimport move
 # from libc.math cimport isfinite
 
 
-from goldenrockefeller.cyutil.array cimport DoubleArray
+from goldenrockefeller.cyutil.array cimport DoubleArray, new_DoubleArray
 
 from goldenrockefeller.policyopt.experience cimport ExperienceDatum, new_ExperienceDatum
 from goldenrockefeller.policyopt.function_approximation cimport BaseFunctionApproximator, TargetEntry, new_TargetEntry
@@ -34,6 +36,17 @@ cdef valarray[double] valarray_from_DoubleArray(DoubleArray arr) except *:
 
     for id in range(len(arr)):
         new_arr[<size_t>id] = arr.view[id]
+
+    return new_arr
+
+cdef DoubleArray DoubleArray_from_valarray(valarray[double] arr):
+    cdef DoubleArray new_arr
+    cdef Py_ssize_t id
+
+    new_arr = new_DoubleArray(arr.size())
+
+    for id in range(arr.size()):
+        new_arr.view[id] = arr[<size_t>id]
 
     return new_arr
 
@@ -60,6 +73,54 @@ cdef vector[CppExperienceDatum] vector_from_trajectory(list trajectory) except *
         cpp_trajectory.push_back(CppExperienceDatum_from_ExperienceDatum(experience))
 
     return cpp_trajectory
+
+
+cdef class FlatNetwork():
+    cdef shared_ptr[CppFlatNetwork] core
+
+    def __init__(self, size_t n_in_dims, size_t n_hidden_units):
+        self.core = make_shared[CppFlatNetwork](n_in_dims, n_hidden_units)
+
+    cpdef FlatNetwork copy(self, copy_obj = None):
+        cdef FlatNetwork new_network
+        cdef unique_ptr[CppFlatNetwork] new_core
+
+        if copy_obj is None:
+            new_network = FlatNetwork.__new__(FlatNetwork)
+        else:
+            new_network = copy_obj
+
+        new_core.swap(self.core.get().copy())
+        new_network.core.reset(new_core.get())
+        new_core.release()
+
+        return new_network
+
+
+    cpdef DoubleArray parameters(self):
+        return DoubleArray_from_valarray(self.core.get().parameters())
+
+    cpdef void set_parameters(self, DoubleArray parameters)  except *:
+        self.core.get().set_parameters(valarray_from_DoubleArray(parameters))
+
+
+    cpdef double eval(self, DoubleArray input) except *:
+        return self.core.get().eval(valarray_from_DoubleArray(input))
+
+    cpdef DoubleArray grad_wrt_parameters(self, DoubleArray input, double output_grad):
+        return DoubleArray_from_valarray(self.core.get().grad_wrt_parameters(valarray_from_DoubleArray(input), output_grad))
+
+
+    @property
+    def leaky_scale(self):
+        return self.core.get().leaky_scale
+
+    @leaky_scale.setter
+    def leaky_scale(self, double value):
+        self.core.get().leaky_scale = value
+
+
+
 
 
 cdef class Approximator(BaseFunctionApproximator):
@@ -338,6 +399,6 @@ cdef class FlatFitnessCriticSystem(FitnessCriticSystem):
                 trajectory = self._trajectory_buffer.next_shuffled_datum()
                 approximator.batch_update(trajectory)
 
-            # print(approximator.eval(trajectory[0]))
+            print(approximator.eval(trajectory[0]))
         system = self.super_system()
         system.prep_for_epoch()

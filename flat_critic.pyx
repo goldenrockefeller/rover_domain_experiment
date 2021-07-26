@@ -399,6 +399,6 @@ cdef class FlatFitnessCriticSystem(FitnessCriticSystem):
                 trajectory = self._trajectory_buffer.next_shuffled_datum()
                 approximator.batch_update(trajectory)
 
-            print(approximator.eval(trajectory[0]))
+            # print(approximator.eval(trajectory[0]))
         system = self.super_system()
         system.prep_for_epoch()

@@ -9,7 +9,7 @@ import sys
 
 
 def run():
-    experiment_name = "15Agents4Poi_nreq_4_redo"
+    experiment_name = "15Agents4Poi_nreq_4_redo_B"
     n_stats_run_per_process = 1
 
 

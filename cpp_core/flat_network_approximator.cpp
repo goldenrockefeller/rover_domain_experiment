@@ -9,6 +9,7 @@
 using std::valarray;
 using std::vector;
 using std::size_t;
+using std::pow;
 using std::unique_ptr;
 using std::shared_ptr;
 using std::slice;
@@ -479,7 +480,7 @@ namespace goldenrockefeller {
 
 			for (const Experience& experience : experiences) {
 				sample_fitness += experience.reward;
-
+			
 				grads.push_back(this->grad_wrt_parameters(experience, 1.));
 			}
 			this->optimizer.add_pressures(grads);
@@ -487,6 +488,48 @@ namespace goldenrockefeller {
 			size_t experience_id = 0;
 			for (const Experience& experience : experiences) {
 
+				double traj_eval = this->eval(experience);
+				double error = sample_fitness - traj_eval;
+				valarray<double> grad = grads[experience_id];
+				delta_parameters += this->optimizer.delta_parameters(grad, error);
+				experience_id += 1;
+			}
+			this->optimizer.discount_pressures();
+
+
+			valarray<double> parameters = this->parameters();
+			this->set_parameters(parameters + delta_parameters);
+		}
+
+		DiscountFlatNetworkApproximator* DiscountFlatNetworkApproximator::copy_impl() const {
+			return new DiscountFlatNetworkApproximator(move(this->flat_network->copy()));
+		}
+
+		void DiscountFlatNetworkApproximator::update(const std::vector<Experience>& experiences) {
+			double sample_fitness = 0.;
+			double traj_eval = 0.;
+			valarray<double> delta_parameters(0., this->n_parameters());
+
+			vector<valarray<double>> grads;
+			grads.reserve(experiences.size());
+
+			for (const Experience& experience : experiences) {
+				
+
+				grads.push_back(this->grad_wrt_parameters(experience, 1.));
+			}
+			this->optimizer.add_pressures(grads);
+
+			size_t experience_id = 0;
+			for (const Experience& experience : experiences) {
+				sample_fitness = 0.;
+				size_t other_experience_id = 0;
+				for (const Experience& other_experience : experiences) {
+					other_experience_id += 1;
+					if (other_experience_id >= experience_id) {
+						sample_fitness += experience.reward * pow(this->discount_factor, other_experience_id- experience_id);
+					}
+				}
 				double traj_eval = this->eval(experience);
 				double error = sample_fitness - traj_eval;
 				valarray<double> grad = grads[experience_id];

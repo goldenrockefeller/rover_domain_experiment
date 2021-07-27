@@ -137,6 +137,33 @@ namespace goldenrockefeller {
 		};
 
 
+		struct DiscountFlatNetworkApproximator : public FlatNetworkApproximator {
+		protected:
+			virtual DiscountFlatNetworkApproximator* copy_impl() const override;
+		public:
+			double discount_factor = 0.97;
+
+			DiscountFlatNetworkApproximator() : FlatNetworkApproximator() {}
+
+			DiscountFlatNetworkApproximator(std::shared_ptr<FlatNetwork> flat_network) 
+				: FlatNetworkApproximator(flat_network)
+				{}
+
+			DiscountFlatNetworkApproximator(std::size_t n_in_dims, std::size_t n_hidden_units)
+				: FlatNetworkApproximator(n_in_dims, n_hidden_units)
+				{}
+
+			virtual ~DiscountFlatNetworkApproximator() {};
+
+
+			std::unique_ptr<DiscountFlatNetworkApproximator> copy() const {
+				return std::unique_ptr<DiscountFlatNetworkApproximator>(this->copy_impl());
+			}
+
+			virtual void update(const std::vector<Experience>& experiences) override;
+		};
+
+
 		struct QFlatNetworkApproximator : public FlatNetworkApproximator {
 		protected:
 			virtual QFlatNetworkApproximator* copy_impl() const override;

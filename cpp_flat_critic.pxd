@@ -51,6 +51,13 @@ cdef extern from "cpp_core/flat_network_approximator.hpp" namespace "goldenrocke
         double eval(const Experience&) except +
         void update(const vector[Experience] &) except +
 
+    cdef cppclass DiscountFlatNetworkApproximator:
+        FlatNetworkOptimizer optimizer
+
+        DiscountFlatNetworkApproximator(size_t, size_t) except +
+        double eval(const Experience&) except +
+        void update(const vector[Experience] &) except +
+
     cdef cppclass QFlatNetworkApproximator:
         FlatNetworkOptimizer optimizer
 

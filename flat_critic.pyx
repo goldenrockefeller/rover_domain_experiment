@@ -8,6 +8,7 @@ from cpp_flat_critic cimport valarray
 from cpp_flat_critic cimport Experience as CppExperienceDatum
 from cpp_flat_critic cimport FlatNetworkApproximator as CppFlatNetworkApproximator
 from cpp_flat_critic cimport MonteFlatNetworkApproximator as CppMonteFlatNetworkApproximator
+from cpp_flat_critic cimport DiscountFlatNetworkApproximator as CppDiscountFlatNetworkApproximator
 from cpp_flat_critic cimport QFlatNetworkApproximator as CppQFlatNetworkApproximator
 from cpp_flat_critic cimport UFlatNetworkApproximator as CppUFlatNetworkApproximator
 from cpp_flat_critic cimport UqFlatNetworkApproximator as CppUqFlatNetworkApproximator
@@ -230,6 +231,53 @@ cdef class MonteFlatNetworkApproximator(Approximator):
     @learning_mode.setter
     def learning_mode(self, int value):
         self.core.get().optimizer.learning_mode = value
+
+cdef class DiscountFlatNetworkApproximator(Approximator):
+    cdef shared_ptr[CppDiscountFlatNetworkApproximator] core
+
+    def __init__(self, size_t n_in_dims, size_t n_hidden_units):
+        self.core = make_shared[CppDiscountFlatNetworkApproximator](n_in_dims, n_hidden_units)
+
+    cpdef eval(self, input):
+        return self.core.get().eval(CppExperienceDatum_from_ExperienceDatum(input))
+
+
+    cpdef void batch_update(self, list trajectory) except *:
+        # TODO trajectory is a sequence (typing)
+        self.core.get().update(vector_from_trajectory(trajectory))
+
+    @property
+    def time_horizon(self):
+        return self.core.get().optimizer.time_horizon
+
+    @time_horizon.setter
+    def time_horizon(self, double value):
+        self.core.get().optimizer.time_horizon = value
+
+    @property
+    def epsilon(self):
+        return self.core.get().optimizer.epsilon
+
+    @epsilon.setter
+    def epsilon(self, double value):
+        self.core.get().optimizer.epsilon = value
+
+    @property
+    def learning_rate(self):
+        return self.core.get().optimizer.learning_rate
+
+    @learning_rate.setter
+    def learning_rate(self, double value):
+        self.core.get().optimizer.learning_rate = value
+
+    @property
+    def learning_mode(self):
+        return self.core.get().optimizer.learning_mode
+
+    @learning_mode.setter
+    def learning_mode(self, int value):
+        self.core.get().optimizer.learning_mode = value
+
 
 
 

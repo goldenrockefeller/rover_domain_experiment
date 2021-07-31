@@ -67,7 +67,7 @@ def difference_reward(arg_dict):
     evaluator.set_n_req(old_evaluator.n_req())
     evaluator.set_capture_dist(old_evaluator.capture_dist())
 
-def flat_critic_4_etb(arg_dict):
+def flat_critic_6_etb(arg_dict):
     multiagent_system = arg_dict["trial"].system
 
     agent_systems = multiagent_system.agent_systems()
@@ -83,7 +83,7 @@ def flat_critic_4_etb(arg_dict):
 
         intermediate_critic.time_horizon = 10
         intermediate_critic.learning_mode = 0
-        intermediate_critic.learning_rate = 1e-4
+        intermediate_critic.learning_rate = 1e-6
 
         fitness_critic_system.trajectory_buffer().set_capacity(100)
         fitness_critic_system.experience_target_buffer.set_capacity(5000)

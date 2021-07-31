@@ -136,7 +136,7 @@ class Runner:
                     n_action_dims)
                 map.leaky_scale = 0.1
                 map = TanhLayer(map)
-                phenotype = (DefaultPhenotype(map))
+                phenotype = (CauchyPhenotype(map))
 
                 phenotype.set_mutation_rate(0.01)
                 phenotype.set_mutation_factor(1)

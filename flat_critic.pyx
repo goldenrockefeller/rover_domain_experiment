@@ -13,7 +13,7 @@ from cpp_flat_critic cimport QFlatNetworkApproximator as CppQFlatNetworkApproxim
 from cpp_flat_critic cimport UFlatNetworkApproximator as CppUFlatNetworkApproximator
 from cpp_flat_critic cimport UqFlatNetworkApproximator as CppUqFlatNetworkApproximator
 from cpp_flat_critic cimport FlatNetwork as CppFlatNetwork
-from cpp_flat_Critic cimport Approximator as CppApproximator
+from cpp_flat_critic cimport Approximator as CppApproximator
 
 from libcpp.memory cimport shared_ptr, unique_ptr, make_shared
 from libcpp.vector cimport vector

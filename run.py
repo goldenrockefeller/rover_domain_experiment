@@ -9,13 +9,13 @@ import sys
 
 
 def run():
-    experiment_name = "15Agents4Poi_nreq_4_redo_B"
+    experiment_name = "15Agents4Poi_nreq_4_redo_C"
     n_stats_run_per_process = 1
 
 
     mods_to_mix = [
-        (global_reward,),
-        (monte_flat_critic_7, monte_flat_critic_5, monte_flat_critic_4, flat_critic_8, discount_flat_critic_7)
+        (global_reward, difference),
+        (monte_flat_critic_7_etb, monte_flat_critic_6_etb, flat_critic_7_etb, discount_flat_critic_7_etb, none, discount_flat_critic_6_etb)
     ]
 
 
@@ -33,7 +33,7 @@ def run():
 
 
 if __name__ == '__main__':
-    # r = Runner('test', (global_reward, discount_flat_critic_7))
+    # r = Runner('test', (global_reward, discount_flat_critic_6_etb))
     # r.new_run()
 
     n_processes = int(sys.argv[1])

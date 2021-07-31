@@ -319,6 +319,9 @@ namespace goldenrockefeller {
 			return grad;
 		}
 
+		void Approximator::update(const Experience& experience, double target_value) {
+			throw runtime_error("not implemented");
+		}
 
 		FlatNetworkOptimizer::FlatNetworkOptimizer(const valarray<double>& init_parameters) :
 			time_horizon(100),
@@ -466,6 +469,21 @@ namespace goldenrockefeller {
 			
 		}
 
+		void FlatNetworkApproximator::update(const Experience& experience, double target_value) {
+			double eval = this->eval(experience);
+
+			double error = target_value - eval;
+
+			valarray<double> grad = this->grad_wrt_parameters(experience, 1.);
+
+			this->optimizer.add_pressures(grad);
+			valarray<double> delta_parameters = this->optimizer.delta_parameters(grad, error);
+			this->optimizer.discount_pressures();
+
+			valarray<double> parameters = this->parameters();
+			this->set_parameters(parameters + delta_parameters);
+		}
+
 		MonteFlatNetworkApproximator* MonteFlatNetworkApproximator::copy_impl() const {
 			return new MonteFlatNetworkApproximator(move(this->flat_network->copy()));
 		}
@@ -527,7 +545,7 @@ namespace goldenrockefeller {
 				for (const Experience& other_experience : experiences) {
 					other_experience_id += 1;
 					if (other_experience_id >= experience_id) {
-						sample_fitness += experience.reward * pow(this->discount_factor, other_experience_id- experience_id);
+						sample_fitness += other_experience.reward * pow(this->discount_factor, other_experience_id- experience_id);
 					}
 				}
 				double traj_eval = this->eval(experience);

@@ -23,9 +23,11 @@ from gru_fitness_critic import RecordingSumGruCriticSystem, RecordingFinalGruCri
 from relu_critic import ReluNetworkApproximator, ReluFitnessCriticSystem
 
 from flat_critic import FlatFitnessCriticSystem
-from flat_critic import UqFlatNetworkApproximator
-from flat_critic import UFlatNetworkApproximator
-from flat_critic import QFlatNetworkApproximator
+from flat_critic import MonteFlatFitnessCriticSystem
+from flat_critic import DiscountFlatFitnessCriticSystem
+# from flat_critic import UqFlatNetworkApproximator
+# from flat_critic import UFlatNetworkApproximator
+# from flat_critic import QFlatNetworkApproximator
 from flat_critic import MonteFlatNetworkApproximator
 from flat_critic import FlatNetworkApproximator
 from flat_critic import DiscountFlatNetworkApproximator
@@ -65,53 +67,33 @@ def difference_reward(arg_dict):
     evaluator.set_n_req(old_evaluator.n_req())
     evaluator.set_capture_dist(old_evaluator.capture_dist())
 
-def flat_critic_8(arg_dict):
+def flat_critic_7_etb(arg_dict):
     multiagent_system = arg_dict["trial"].system
 
     agent_systems = multiagent_system.agent_systems()
 
     for rover_id in range(len(agent_systems)):
         evolving_system = agent_systems[rover_id]
-
-        intermediate_critic = FlatNetworkApproximator(10, 160)
-        intermediate_critic.time_horizon = 10.
-        intermediate_critic.learning_mode = 0
-        intermediate_critic.learning_rate = 1e-8
 
         fitness_critic_system = (
             FlatFitnessCriticSystem(
-                evolving_system,
-                intermediate_critic))
+                evolving_system, 10, 80 ))
 
-        fitness_critic_system.trajectory_buffer().set_capacity(500)
-        fitness_critic_system.set_n_critic_update_batches_per_epoch(20)
-        fitness_critic_system.set_n_trajectories_per_critic_update_batch(2)
-        # fitness_critic_system.set_critic_update_batch_size(25)
+        intermediate_critic = fitness_critic_system.intermediate_critic()
 
-        agent_systems[rover_id] = fitness_critic_system
-
-def flat_critic_7(arg_dict):
-    multiagent_system = arg_dict["trial"].system
-
-    agent_systems = multiagent_system.agent_systems()
-
-    for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems[rover_id]
-
-        intermediate_critic = FlatNetworkApproximator(10, 160)
-        intermediate_critic.time_horizon = 10.
+        intermediate_critic.time_horizon = 10
         intermediate_critic.learning_mode = 0
         intermediate_critic.learning_rate = 1e-7
 
-        fitness_critic_system = (
-            FlatFitnessCriticSystem(
-                evolving_system,
-                intermediate_critic))
+        fitness_critic_system.trajectory_buffer().set_capacity(100)
+        fitness_critic_system.experience_target_buffer.set_capacity(5000)
+        #
+        # fitness_critic_system.n_critic_updates_per_epoch = 99
 
-        fitness_critic_system.trajectory_buffer().set_capacity(500)
-        fitness_critic_system.set_n_critic_update_batches_per_epoch(20)
-        fitness_critic_system.set_n_trajectories_per_critic_update_batch(2)
-        # fitness_critic_system.set_critic_update_batch_size(25)
+        fitness_critic_system.uses_experience_targets_for_updates = True
+        fitness_critic_system.n_critic_updates_per_epoch = 5000
+
+
 
         agent_systems[rover_id] = fitness_critic_system
 
@@ -137,7 +119,7 @@ def flat_critic_7(arg_dict):
 #
 #         fitness_critic_system.trajectory_buffer().set_capacity(500)
 #         fitness_critic_system.critic_target_buffer().set_capacity(2500)
-#         fitness_critic_system.set_n_critic_update_batches_per_epoch(20)
+#         fitness_critic_system.set_n_critic_updates_per_epoch(20)
 #         fitness_critic_system.set_n_trajectories_per_critic_update_batch(5)
 #         fitness_critic_system.set_critic_update_batch_size(25)
 #
@@ -147,7 +129,7 @@ def flat_critic_7(arg_dict):
 
 
 
-def monte_flat_critic_7(arg_dict):
+def monte_flat_critic_7_etb(arg_dict):
     multiagent_system = arg_dict["trial"].system
 
     agent_systems = multiagent_system.agent_systems()
@@ -155,24 +137,30 @@ def monte_flat_critic_7(arg_dict):
     for rover_id in range(len(agent_systems)):
         evolving_system = agent_systems[rover_id]
 
-        intermediate_critic = MonteFlatNetworkApproximator(10, 80)
+        fitness_critic_system = (
+            MonteFlatFitnessCriticSystem(
+                evolving_system, 10, 80 ))
+
+        intermediate_critic = fitness_critic_system.intermediate_critic()
+
         intermediate_critic.time_horizon = 10
         intermediate_critic.learning_mode = 0
         intermediate_critic.learning_rate = 1e-7
 
-        fitness_critic_system = (
-            FlatFitnessCriticSystem(
-                evolving_system,
-                intermediate_critic))
+        fitness_critic_system.trajectory_buffer().set_capacity(100)
+        fitness_critic_system.experience_target_buffer.set_capacity(5000)
+        #
+        # fitness_critic_system.n_critic_updates_per_epoch = 99
 
-        fitness_critic_system.trajectory_buffer().set_capacity(500)
-        fitness_critic_system.set_n_critic_update_batches_per_epoch(20)
-        fitness_critic_system.set_n_trajectories_per_critic_update_batch(2)
+        fitness_critic_system.uses_experience_targets_for_updates = True
+        fitness_critic_system.n_critic_updates_per_epoch = 5000
+
+
 
         agent_systems[rover_id] = fitness_critic_system
 
 
-def monte_flat_critic_5(arg_dict):
+def monte_flat_critic_6_etb(arg_dict):
     multiagent_system = arg_dict["trial"].system
 
     agent_systems = multiagent_system.agent_systems()
@@ -180,23 +168,28 @@ def monte_flat_critic_5(arg_dict):
     for rover_id in range(len(agent_systems)):
         evolving_system = agent_systems[rover_id]
 
-        intermediate_critic = MonteFlatNetworkApproximator(10, 80)
+        fitness_critic_system = (
+            MonteFlatFitnessCriticSystem(
+                evolving_system, 10, 80 ))
+
+        intermediate_critic = fitness_critic_system.intermediate_critic()
+
         intermediate_critic.time_horizon = 10
         intermediate_critic.learning_mode = 0
-        intermediate_critic.learning_rate = 1e-5
+        intermediate_critic.learning_rate = 1e-6
 
-        fitness_critic_system = (
-            FlatFitnessCriticSystem(
-                evolving_system,
-                intermediate_critic))
+        fitness_critic_system.trajectory_buffer().set_capacity(100)
+        fitness_critic_system.experience_target_buffer.set_capacity(5000)
+        #
+        # fitness_critic_system.n_critic_updates_per_epoch = 99
 
-        fitness_critic_system.trajectory_buffer().set_capacity(500)
-        fitness_critic_system.set_n_critic_update_batches_per_epoch(20)
-        fitness_critic_system.set_n_trajectories_per_critic_update_batch(2)
+        fitness_critic_system.uses_experience_targets_for_updates = True
+        fitness_critic_system.n_critic_updates_per_epoch = 5000
+
 
         agent_systems[rover_id] = fitness_critic_system
 
-def monte_flat_critic_4(arg_dict):
+def discount_flat_critic_7_etb(arg_dict):
     multiagent_system = arg_dict["trial"].system
 
     agent_systems = multiagent_system.agent_systems()
@@ -204,43 +197,54 @@ def monte_flat_critic_4(arg_dict):
     for rover_id in range(len(agent_systems)):
         evolving_system = agent_systems[rover_id]
 
-        intermediate_critic = MonteFlatNetworkApproximator(10, 80)
-        intermediate_critic.time_horizon = 10
-        intermediate_critic.learning_mode = 0
-        intermediate_critic.learning_rate = 1e-4
-
         fitness_critic_system = (
-            FlatFitnessCriticSystem(
-                evolving_system,
-                intermediate_critic))
+            DiscountFlatFitnessCriticSystem(
+                evolving_system, 10, 80 ))
 
-        fitness_critic_system.trajectory_buffer().set_capacity(500)
-        fitness_critic_system.set_n_critic_update_batches_per_epoch(20)
-        fitness_critic_system.set_n_trajectories_per_critic_update_batch(2)
+        intermediate_critic = fitness_critic_system.intermediate_critic()
 
-        agent_systems[rover_id] = fitness_critic_system
-
-
-def discount_flat_critic_7(arg_dict):
-    multiagent_system = arg_dict["trial"].system
-
-    agent_systems = multiagent_system.agent_systems()
-
-    for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems[rover_id]
-
-        intermediate_critic = DiscountFlatNetworkApproximator(10, 80)
         intermediate_critic.time_horizon = 10
         intermediate_critic.learning_mode = 0
         intermediate_critic.learning_rate = 1e-7
 
-        fitness_critic_system = (
-            FlatFitnessCriticSystem(
-                evolving_system,
-                intermediate_critic))
+        fitness_critic_system.trajectory_buffer().set_capacity(100)
+        fitness_critic_system.experience_target_buffer.set_capacity(5000)
+        #
+        # fitness_critic_system.n_critic_updates_per_epoch = 99
 
-        fitness_critic_system.trajectory_buffer().set_capacity(500)
-        fitness_critic_system.set_n_critic_update_batches_per_epoch(20)
-        fitness_critic_system.set_n_trajectories_per_critic_update_batch(2)
+        fitness_critic_system.uses_experience_targets_for_updates = True
+        fitness_critic_system.n_critic_updates_per_epoch = 5000
+
+
+        agent_systems[rover_id] = fitness_critic_system
+
+
+def discount_flat_critic_6_etb(arg_dict):
+    multiagent_system = arg_dict["trial"].system
+
+    agent_systems = multiagent_system.agent_systems()
+
+    for rover_id in range(len(agent_systems)):
+        evolving_system = agent_systems[rover_id]
+
+        fitness_critic_system = (
+            DiscountFlatFitnessCriticSystem(
+                evolving_system, 10, 80 ))
+
+        intermediate_critic = fitness_critic_system.intermediate_critic()
+
+        intermediate_critic.time_horizon = 10
+        intermediate_critic.learning_mode = 0
+        intermediate_critic.learning_rate = 1e-6
+
+        fitness_critic_system.trajectory_buffer().set_capacity(100)
+        fitness_critic_system.experience_target_buffer.set_capacity(5000)
+        #
+        # fitness_critic_system.n_critic_updates_per_epoch = 99
+
+        fitness_critic_system.uses_experience_targets_for_updates = True
+        fitness_critic_system.n_critic_updates_per_epoch = 5000
+
+
 
         agent_systems[rover_id] = fitness_critic_system

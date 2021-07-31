@@ -34,9 +34,9 @@ from gru_fitness_critic import RecordingSumGruCriticSystem, RecordingFinalGruCri
 from relu_critic import ReluNetworkApproximator, ReluFitnessCriticSystem
 
 from flat_critic import FlatFitnessCriticSystem
-from flat_critic import UqFlatNetworkApproximator
-from flat_critic import UFlatNetworkApproximator
-from flat_critic import QFlatNetworkApproximator
+# from flat_critic import UqFlatNetworkApproximator
+# from flat_critic import UFlatNetworkApproximator
+# from flat_critic import QFlatNetworkApproximator
 from flat_critic import MonteFlatNetworkApproximator
 from flat_critic import FlatNetworkApproximator
 

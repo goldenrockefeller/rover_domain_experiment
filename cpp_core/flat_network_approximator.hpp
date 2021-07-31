@@ -62,6 +62,8 @@ namespace goldenrockefeller {
 			) = 0;
 
 			virtual void update(const std::vector<Experience>& experiences) = 0;
+			virtual void update(const Experience& experience, double target_value);
+			
 		};
 
 		struct FlatNetworkOptimizer {
@@ -108,7 +110,7 @@ namespace goldenrockefeller {
 			) override;
 
 			virtual void update(const std::vector<Experience>& experiences) override;
-
+			virtual void update(const Experience& experience, double target_value) override;
 
 		};
 

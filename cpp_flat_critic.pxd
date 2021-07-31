@@ -36,6 +36,7 @@ cdef extern from "cpp_core/flat_network_approximator.hpp" namespace "goldenrocke
     cdef cppclass Approximator:
         double eval(const Experience&) except +
         void update(const vector[Experience] &) except +
+        void update(const Experience &, double) except +
 
     cdef cppclass FlatNetworkApproximator:
         FlatNetworkOptimizer optimizer
@@ -43,6 +44,7 @@ cdef extern from "cpp_core/flat_network_approximator.hpp" namespace "goldenrocke
         FlatNetworkApproximator(size_t, size_t) except +
         double eval(const Experience&) except +
         void update(const vector[Experience] &) except +
+        void update(const Experience &, double) except +
 
     cdef cppclass MonteFlatNetworkApproximator:
         FlatNetworkOptimizer optimizer
@@ -50,6 +52,7 @@ cdef extern from "cpp_core/flat_network_approximator.hpp" namespace "goldenrocke
         MonteFlatNetworkApproximator(size_t, size_t) except +
         double eval(const Experience&) except +
         void update(const vector[Experience] &) except +
+        void update(const Experience &, double) except +
 
     cdef cppclass DiscountFlatNetworkApproximator:
         FlatNetworkOptimizer optimizer

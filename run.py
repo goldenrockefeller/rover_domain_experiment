@@ -15,7 +15,7 @@ def run():
 
     mods_to_mix = [
         (global_reward, difference_reward),
-        (monte_flat_critic_7_etb, monte_flat_critic_6_etb, flat_critic_7_etb, discount_flat_critic_7_etb, none, discount_flat_critic_6_etb)
+        (monte_flat_critic_4_etb, monte_flat_critic_5_etb, flat_critic_4_etb, flat_critic_5_etb, discount_flat_critic_4_etb, discount_flat_critic_5_etb)
     ]
 
 

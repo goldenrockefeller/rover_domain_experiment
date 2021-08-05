@@ -35,7 +35,7 @@ namespace goldenrockefeller {
 
 		FlatNetwork::FlatNetwork() : FlatNetwork::FlatNetwork(1, 1) {}
 
-		FlatNetwork::FlatNetwork(size_t n_in_dims, size_t n_hidden_units) : leaky_scale(0.1) {
+		FlatNetwork::FlatNetwork(size_t n_in_dims, size_t n_hidden_units) : leaky_scale(0.01) {
 			if (n_in_dims <= 0) {
 				ostringstream msg;
 				msg << "The number of input dimensions (n_in_dims = "
@@ -260,12 +260,7 @@ namespace goldenrockefeller {
 
 			// Pre Relu Result
 			valarray<double> pre_relu_res{ res0 };
-
-			// Perform Relu. 
-			for (size_t i{ 0 }; i < n_hidden_units; i++) {
-				res0[i] = res0[i] * (res0[i] > 0.) + res0[i] * (res0[i] <= 0.) * this->leaky_scale;
-			}
-
+			
 			// Get intermediate gradients.
 			valarray<double> grad_wrt_res0;
 			grad_wrt_res0.resize(n_hidden_units);
@@ -480,8 +475,7 @@ namespace goldenrockefeller {
 			valarray<double> delta_parameters = this->optimizer.delta_parameters(grad, error);
 			this->optimizer.discount_pressures();
 
-			valarray<double> parameters = this->parameters();
-			this->set_parameters(parameters + delta_parameters);
+			this->set_parameters(this->parameters() + delta_parameters);
 		}
 
 		MonteFlatNetworkApproximator* MonteFlatNetworkApproximator::copy_impl() const {
@@ -514,9 +508,8 @@ namespace goldenrockefeller {
 			}
 			this->optimizer.discount_pressures();
 
-
-			valarray<double> parameters = this->parameters();
-			this->set_parameters(parameters + delta_parameters);
+			valarray<double> parameters = this->parameters() + delta_parameters;
+			this->set_parameters(parameters);
 		}
 
 		DiscountFlatNetworkApproximator* DiscountFlatNetworkApproximator::copy_impl() const {
@@ -525,7 +518,7 @@ namespace goldenrockefeller {
 
 		void DiscountFlatNetworkApproximator::update(const std::vector<Experience>& experiences) {
 			double sample_fitness = 0.;
-			double traj_eval = 0.;
+			double step_eval = 0.;
 			valarray<double> delta_parameters(0., this->n_parameters());
 
 			vector<valarray<double>> grads;
@@ -548,8 +541,8 @@ namespace goldenrockefeller {
 						sample_fitness += other_experience.reward * pow(this->discount_factor, other_experience_id- experience_id);
 					}
 				}
-				double traj_eval = this->eval(experience);
-				double error = sample_fitness - traj_eval;
+				double step_eval = this->eval(experience);
+				double error = sample_fitness - step_eval;
 				valarray<double> grad = grads[experience_id];
 				delta_parameters += this->optimizer.delta_parameters(grad, error);
 				experience_id += 1;

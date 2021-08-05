@@ -20,14 +20,65 @@ from typing import List
 
 @cython.warn.undeclared(True)
 cdef class MeanFitnessCriticSystem(FitnessCriticSystem):
+    cdef public Py_ssize_t n_critic_updates_per_epoch
+    cdef public ShuffleBuffer experience_target_buffer
+    cdef public Py_ssize_t uses_experience_targets_for_updates
+
+    def __init__(
+            self,
+            BaseSystem super_system,
+            BaseFunctionApproximator intermediate_critic):
+        init_FitnessCriticSystem(self, super_system, intermediate_critic)
+        self.n_critic_updates_per_epoch = 1
+        self.experience_target_buffer = new_ShuffleBuffer()
+
+
+    cpdef void extract_experience_targets(self, list trajectory) except *:
+        cdef ExperienceDatum experience
+        cdef double traj_eval
+        cdef double step_eval
+        cdef double sample_fitness
+        cdef BaseFunctionApproximator intermediate_critic  = self.intermediate_critic()
+        cdef double error
+        cdef TargetEntry target_entry
+        cdef Py_ssize_t traj_len = len(trajectory)
+        cdef DoubleArray target
+
+        sample_fitness = 0.
+        traj_eval = 0.
+
+        for experience in trajectory:
+            sample_fitness += experience.reward
+            traj_eval += intermediate_critic.eval(experience).view[0]
+
+        traj_eval /= traj_len
+
+        error = sample_fitness - traj_eval
+
+        for experience in trajectory:
+            step_eval = intermediate_critic.eval(experience).view[0]
+            target_entry = new_TargetEntry()
+            target_entry.input = experience
+            target = new_DoubleArray(1)
+            target.view[0] = error + step_eval
+            target_entry.target = target
+            self.experience_target_buffer.add_staged_datum(target_entry)
+
+
+    cpdef void update_policy(self) except *:
+        cdef list current_trajectory = self.current_trajectory()
+        FitnessCriticSystem.update_policy(self)
+
+        if self.uses_experience_targets_for_updates:
+            self.extract_experience_targets(current_trajectory)
 
     @cython.locals(trajectory = list, target_entries = list)
     cpdef void prep_for_epoch(self) except *:
-        cdef Py_ssize_t batch_id
+        cdef Py_ssize_t update_id
         cdef Py_ssize_t trajectory_id
         cdef Py_ssize_t target_id
         cdef Py_ssize_t n_trajectories_per_batch
-        cdef Py_ssize_t n_batches
+        cdef Py_ssize_t n_upddates
         cdef Py_ssize_t batch_size
         cdef ShuffleBuffer trajectory_buffer
         cdef ShuffleBuffer critic_target_buffer
@@ -43,14 +94,13 @@ cdef class MeanFitnessCriticSystem(FitnessCriticSystem):
         cdef DoubleArray eval
         cdef DoubleArray target
 
-        n_batches = (
-            self.n_critic_update_batches_per_epoch())
+        cdef Py_ssize_t n_updates = self.n_critic_updates_per_epoch
 
-        n_trajectories_per_batch = (
-            self.n_trajectories_per_critic_update_batch())
+        # n_trajectories_per_batch = (
+        #     self.n_trajectories_per_critic_update_batch())
 
         trajectory_buffer = self.trajectory_buffer()
-        critic_target_buffer = self.critic_target_buffer()
+        # critic_target_buffer = self.critic_target_buffer()
         intermediate_critic = self.intermediate_critic()
 
 
@@ -82,42 +132,48 @@ cdef class MeanFitnessCriticSystem(FitnessCriticSystem):
         #     eval = intermediate_critic.eval(experience)
         #     #print("Estimate: ", eval.view[0])
 
+
+
         if not trajectory_buffer.is_empty():
-            for batch_id in range(n_batches):
-                for trajectory_id in range(n_trajectories_per_batch):
-                    trajectory = trajectory_buffer.next_shuffled_datum()
+            for update_id in range(n_updates):
+                if not self.uses_experience_targets_for_updates:
+                    raise NotImplementedError()
 
-                    target_entries = [None] * len(trajectory)
+                target_entry = self.experience_target_buffer.next_shuffled_datum()
+                intermediate_critic.batch_update([target_entry])
+                # trajectory = trajectory_buffer.next_shuffled_datum()
+                #
+                # target_entries = [None] * len(trajectory)
+                #
+                # fitness = 0.
+                # for experience in trajectory:
+                #     fitness += experience.reward
+                #
+                # mean = 0.
+                # for experience in trajectory:
+                #     mean += intermediate_critic.eval(experience).view[0]
+                # mean /= len(trajectory)
+                #
+                # error = fitness - mean
+                #
+                # for target_id in range(len(trajectory)):
+                #     experience = trajectory[target_id]
+                #     target = new_DoubleArray(1)
+                #     target.view[0] = (
+                #         intermediate_critic.eval(experience).view[0]
+                #         + error
+                #     )
+                #     # target.view[0] = experience.reward
+                #     target_entry = new_TargetEntry()
+                #     target_entry.input = experience
+                #     target_entry.target = target
+                #     target_entries[target_id] = target_entry
 
-                    fitness = 0.
-                    for experience in trajectory:
-                        fitness += experience.reward
-
-                    mean = 0.
-                    for experience in trajectory:
-                        mean += intermediate_critic.eval(experience).view[0]
-                    mean /= len(trajectory)
-
-                    error = fitness - mean
-
-                    for target_id in range(len(trajectory)):
-                        experience = trajectory[target_id]
-                        target = new_DoubleArray(1)
-                        target.view[0] = (
-                            intermediate_critic.eval(experience).view[0]
-                            + error
-                        )
-                        # target.view[0] = experience.reward
-                        target_entry = new_TargetEntry()
-                        target_entry.input = experience
-                        target_entry.target = target
-                        target_entries[target_id] = target_entry
+                #
+                # intermediate_critic.batch_update(target_entries)
 
 
-                    intermediate_critic.batch_update(target_entries)
-
-
-            # print("Estimate: ",mean)
+            # print("Estimate: ",intermediate_critic.eval(target_entry.input).view[0])
 
 
         system = self.super_system()

@@ -28,6 +28,9 @@ from goldenrockefeller.policyopt.function_approximation cimport BaseFunctionAppr
 from goldenrockefeller.policyopt.buffer cimport ShuffleBuffer, new_ShuffleBuffer
 from goldenrockefeller.policyopt.fitness_critic cimport FitnessCriticSystem, init_FitnessCriticSystem
 from goldenrockefeller.policyopt.system cimport BaseSystem
+
+
+import sys
 #
 
 cdef valarray[double] valarray_from_DoubleArray(DoubleArray arr) except *:
@@ -358,6 +361,9 @@ cdef class FlatFitnessCriticSystem(FitnessCriticSystem):
         cdef TargetEntry target_entry
         cdef Py_ssize_t traj_len = len(trajectory)
 
+        sample_fitness = 0.
+        traj_eval = 0.
+
         for experience in trajectory:
             sample_fitness += experience.reward
             traj_eval += intermediate_critic.eval(experience)
@@ -392,7 +398,11 @@ cdef class FlatFitnessCriticSystem(FitnessCriticSystem):
                     trajectory = self._trajectory_buffer.next_shuffled_datum()
                     approximator.update_using_trajectory(trajectory)
 
-            # print(approximator.eval(trajectory[0]))
+            # raise ValueError()
+            trajectory = self._trajectory_buffer.next_shuffled_datum()
+            print(approximator.eval(target_entry.input))
+            sys.stdout.flush()
+            # raise ValueError()
             # print(len(trajectory))
         system = self.super_system()
         system.prep_for_epoch()
@@ -413,6 +423,8 @@ cdef class MonteFlatFitnessCriticSystem(FlatFitnessCriticSystem):
         cdef ExperienceDatum experience
         cdef double sample_fitness
         cdef TargetEntry target_entry
+
+        sample_fitness = 0.
 
         for experience in trajectory:
             sample_fitness += experience.reward

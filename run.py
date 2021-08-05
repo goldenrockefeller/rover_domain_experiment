@@ -14,7 +14,7 @@ def run():
 
 
     mods_to_mix = [
-        (global_reward, difference _reward),
+        (global_reward, difference_reward),
         (mean_fitness_critic,)
     ]
 

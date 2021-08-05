@@ -138,7 +138,7 @@ def mean_fitness_critic(arg_dict):
     for rover_id in range(len(agent_systems)):
         evolving_system = agent_systems[rover_id]
 
-        map = Rbfn(10, 160, 1)
+        map = ReluLinear(10, 160, 1)
         map.leaky_scale = 0.1
         critic = DifferentiableCriticMap(map)
 
@@ -158,7 +158,7 @@ def mean_fitness_critic(arg_dict):
         fitness_critic_system.n_critic_updates_per_epoch = 5000
 
 
-        intermediate_critic.set_learning_rate(1e-4)
+        intermediate_critic.set_learning_rate(1e-5)
 
         agent_systems[rover_id] = fitness_critic_system
 

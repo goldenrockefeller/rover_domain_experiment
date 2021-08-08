@@ -79,7 +79,7 @@ def flat_critic_6_etb(arg_dict):
 
         fitness_critic_system = (
             FlatFitnessCriticSystem(
-                evolving_system, 10, 80 ))
+                evolving_system, 10, 160 ))
 
         intermediate_critic = fitness_critic_system.intermediate_critic()
 
@@ -88,12 +88,12 @@ def flat_critic_6_etb(arg_dict):
         intermediate_critic.learning_rate = 1e-6
 
         fitness_critic_system.trajectory_buffer().set_capacity(100)
-        fitness_critic_system.experience_target_buffer.set_capacity(25000)
+        fitness_critic_system.experience_target_buffer.set_capacity(5000)
         #
         # fitness_critic_system.n_critic_updates_per_epoch = 99
 
         fitness_critic_system.uses_experience_targets_for_updates = True
-        fitness_critic_system.n_critic_updates_per_epoch = 2500
+        fitness_critic_system.n_critic_updates_per_epoch = 5000
 
 
 
@@ -109,21 +109,21 @@ def flat_critic_5_etb(arg_dict):
 
         fitness_critic_system = (
             FlatFitnessCriticSystem(
-                evolving_system, 10, 80 ))
+                evolving_system, 10, 160 ))
 
         intermediate_critic = fitness_critic_system.intermediate_critic()
 
         intermediate_critic.time_horizon = 10
         intermediate_critic.learning_mode = 0
-        intermediate_critic.learning_rate = 1e-4
+        intermediate_critic.learning_rate = 1e-5
 
         fitness_critic_system.trajectory_buffer().set_capacity(100)
-        fitness_critic_system.experience_target_buffer.set_capacity(25000)
+        fitness_critic_system.experience_target_buffer.set_capacity(5000)
         #
         # fitness_critic_system.n_critic_updates_per_epoch = 99
 
         fitness_critic_system.uses_experience_targets_for_updates = True
-        fitness_critic_system.n_critic_updates_per_epoch = 2500
+        fitness_critic_system.n_critic_updates_per_epoch = 5000
 
 
 
@@ -174,7 +174,7 @@ def monte_flat_critic_4_etb(arg_dict):
 
         fitness_critic_system = (
             MonteFlatFitnessCriticSystem(
-                evolving_system, 10, 80 ))
+                evolving_system, 10, 160 ))
 
         intermediate_critic = fitness_critic_system.intermediate_critic()
 
@@ -183,12 +183,12 @@ def monte_flat_critic_4_etb(arg_dict):
         intermediate_critic.learning_rate = 1e-4
 
         fitness_critic_system.trajectory_buffer().set_capacity(100)
-        fitness_critic_system.experience_target_buffer.set_capacity(25000)
+        fitness_critic_system.experience_target_buffer.set_capacity(5000)
         #
         # fitness_critic_system.n_critic_updates_per_epoch = 99
 
         fitness_critic_system.uses_experience_targets_for_updates = True
-        fitness_critic_system.n_critic_updates_per_epoch = 2500
+        fitness_critic_system.n_critic_updates_per_epoch = 5000
 
 
 
@@ -205,13 +205,13 @@ def monte_flat_critic_5_etb(arg_dict):
 
         fitness_critic_system = (
             MonteFlatFitnessCriticSystem(
-                evolving_system, 10, 80 ))
+                evolving_system, 10, 160 ))
 
         intermediate_critic = fitness_critic_system.intermediate_critic()
 
         intermediate_critic.time_horizon = 10
         intermediate_critic.learning_mode = 0
-        intermediate_critic.learning_rate = 1e-3
+        intermediate_critic.learning_rate = 1e-5
 
         fitness_critic_system.trajectory_buffer().set_capacity(100)
         fitness_critic_system.experience_target_buffer.set_capacity(5000)
@@ -234,7 +234,7 @@ def discount_flat_critic_5_etb(arg_dict):
 
         fitness_critic_system = (
             DiscountFlatFitnessCriticSystem(
-                evolving_system, 10, 80 ))
+                evolving_system, 10, 160 ))
 
         intermediate_critic = fitness_critic_system.intermediate_critic()
 
@@ -264,7 +264,7 @@ def discount_flat_critic_5_etb(arg_dict):
 
         fitness_critic_system = (
             DiscountFlatFitnessCriticSystem(
-                evolving_system, 10, 80 ))
+                evolving_system, 10, 160 ))
 
         intermediate_critic = fitness_critic_system.intermediate_critic()
 
@@ -273,12 +273,12 @@ def discount_flat_critic_5_etb(arg_dict):
         intermediate_critic.learning_rate = 1e-5
 
         fitness_critic_system.trajectory_buffer().set_capacity(100)
-        fitness_critic_system.experience_target_buffer.set_capacity(25000)
+        fitness_critic_system.experience_target_buffer.set_capacity(5000)
         #
         # fitness_critic_system.n_critic_updates_per_epoch = 99
 
         fitness_critic_system.uses_experience_targets_for_updates = True
-        fitness_critic_system.n_critic_updates_per_epoch = 2500
+        fitness_critic_system.n_critic_updates_per_epoch = 5000
 
 
 

@@ -400,7 +400,7 @@ cdef class FlatFitnessCriticSystem(FitnessCriticSystem):
 
             # raise ValueError()
             trajectory = self._trajectory_buffer.next_shuffled_datum()
-            print(approximator.eval(target_entry.input))
+            # print(approximator.eval(target_entry.input))
             sys.stdout.flush()
             # raise ValueError()
             # print(len(trajectory))

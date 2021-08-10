@@ -62,22 +62,21 @@ namespace goldenrockefeller {
 
 			std::random_device rd;  //Will be used to obtain a seed for the random number engine
 			std::mt19937_64 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-			std::uniform_real_distribution<> distrib(-1., 1.);
+			std::uniform_real_distribution<> in_distrib(-pow(3 * n_in_dims,0.5), pow(3 * n_in_dims,0.5));
+			std::uniform_real_distribution<> hidden_distrib(-pow(3 * n_hidden_units,0.5), pow(3 * n_hidden_units,0.5));
 
 			// Initialize linear weights.
 			for (valarray<double>& weights : this->linear) {
 				for (double& weight : weights) {
-					weight = distrib(gen);
-					
+					weight = in_distrib(gen)  ;
 				}
 			}
 
 			for (double& val : this->bias0) {
-				val = distrib(gen);
-				
+				val = hidden_distrib(gen);				
 			}
 
-			this->bias1 = distrib(gen);
+			this->bias1 = hidden_distrib(gen);
 			
 		}
 

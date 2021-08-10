@@ -163,6 +163,39 @@ def mean_fitness_critic(arg_dict):
         agent_systems[rover_id] = fitness_critic_system
 
 
+def mean_fitness_critic_fixed(arg_dict):
+    multiagent_system = arg_dict["trial"].system
+
+    agent_systems = multiagent_system.agent_systems()
+
+    for rover_id in range(len(agent_systems)):
+        evolving_system = agent_systems[rover_id]
+
+        map = ReluLinear(10, 160, 1, True)
+        map.leaky_scale = 0.1
+        critic = DifferentiableCriticMap(map)
+
+        intermediate_critic = DifferentiableFunctionApproximator(critic)
+
+        fitness_critic_system = (
+            MeanFitnessCriticSystem(
+                evolving_system,
+                intermediate_critic))
+
+        fitness_critic_system.trajectory_buffer().set_capacity(100)
+        fitness_critic_system.experience_target_buffer.set_capacity(5000)
+        #
+        # fitness_critic_system.n_critic_updates_per_epoch = 99
+
+        fitness_critic_system.uses_experience_targets_for_updates = True
+        fitness_critic_system.n_critic_updates_per_epoch = 5000
+
+
+        intermediate_critic.set_learning_rate(1e-5)
+
+        agent_systems[rover_id] = fitness_critic_system
+
+
 
 def monte_flat_critic_4_etb(arg_dict):
     multiagent_system = arg_dict["trial"].system

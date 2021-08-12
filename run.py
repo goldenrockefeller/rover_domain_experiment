@@ -9,13 +9,13 @@ import sys
 
 
 def run():
-    experiment_name = "15Agents4Poi_nreq_4_redo_F"
+    experiment_name = "15Agents4Poi_nreq_4_redo_G"
     n_stats_run_per_process = 1
 
 
     mods_to_mix = [
         (global_reward, difference_reward),
-        (mean_fitness_critic_fixed, flat_critic_6_etb, monte_flat_critic_5_etb )
+        (mean_fitness_critic_fixed, flat_critic_5_etb)
     ]
 
     # Does it work without etb? Use smaller learning rate?

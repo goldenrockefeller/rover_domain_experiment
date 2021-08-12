@@ -62,8 +62,8 @@ namespace goldenrockefeller {
 
 			std::random_device rd;  //Will be used to obtain a seed for the random number engine
 			std::mt19937_64 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
-			std::uniform_real_distribution<> in_distrib(-pow(3 * n_in_dims,0.5), pow(3 * n_in_dims,0.5));
-			std::uniform_real_distribution<> hidden_distrib(-pow(3 * n_hidden_units,0.5), pow(3 * n_hidden_units,0.5));
+			std::uniform_real_distribution<> in_distrib(-pow(3. / n_in_dims,0.5), pow(3. / n_in_dims,0.5));
+			std::uniform_real_distribution<> hidden_distrib(-pow(3. / n_hidden_units,0.5), pow(3. / n_hidden_units,0.5));
 
 			// Initialize linear weights.
 			for (valarray<double>& weights : this->linear) {
@@ -73,7 +73,7 @@ namespace goldenrockefeller {
 			}
 
 			for (double& val : this->bias0) {
-				val = hidden_distrib(gen);				
+				val = in_distrib(gen);				
 			}
 
 			this->bias1 = hidden_distrib(gen);
@@ -209,7 +209,7 @@ namespace goldenrockefeller {
 			res0.resize(n_hidden_units);
 
 			for (size_t i{ 0 }; i < n_hidden_units; i++) {
-				res0[i] = (this->linear[i] * input).sum();
+				res0[i] =  (this->linear[i] * input).sum();
 			}
 
 			res0 += this->bias0;
@@ -468,11 +468,12 @@ namespace goldenrockefeller {
 
 			double error = target_value - eval;
 
-			valarray<double> grad = this->grad_wrt_parameters(experience, 1.);
+			valarray<double> grad = this->grad_wrt_parameters(experience, error);
+			valarray<double> delta_parameters = grad * this->optimizer.learning_rate;
 
-			this->optimizer.add_pressures(grad);
-			valarray<double> delta_parameters = this->optimizer.delta_parameters(grad, error);
-			this->optimizer.discount_pressures();
+			// this->optimizer.add_pressures(grad);
+			// valarray<double> delta_parameters = this->optimizer.delta_parameters(grad, error);
+			// this->optimizer.discount_pressures();
 
 			this->set_parameters(this->parameters() + delta_parameters);
 		}

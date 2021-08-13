@@ -15,7 +15,7 @@ def run():
 
     mods_to_mix = [
         (global_reward, difference_reward),
-        (mean_fitness_critic_fixed, flat_critic_5_etb, mean_fitness_critic_flat)
+        (mean_fitness_critic_flat,)
     ]
 
     # Does it work without etb? Use smaller learning rate?

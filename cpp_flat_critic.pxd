@@ -23,6 +23,7 @@ cdef extern from "cpp_core/flat_network_approximator.hpp" namespace "goldenrocke
         unique_ptr[FlatNetwork] copy() except +
         valarray[double] parameters() except +
         void set_parameters(const valarray[double]&) except +
+        size_t n_parameters() except +
         double eval(const valarray[double]&) except +
         valarray[double] grad_wrt_parameters(const valarray[double]&, double) except +
 

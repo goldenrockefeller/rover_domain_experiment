@@ -24,6 +24,7 @@ from gru_fitness_critic import RecordingSumGruCriticSystem, RecordingFinalGruCri
 
 from relu_critic import ReluNetworkApproximator, ReluFitnessCriticSystem
 
+from flat_critic import NFlatNetwork
 from flat_critic import FlatFitnessCriticSystem
 from flat_critic import MonteFlatFitnessCriticSystem
 from flat_critic import DiscountFlatFitnessCriticSystem
@@ -194,6 +195,39 @@ def mean_fitness_critic_fixed(arg_dict):
         intermediate_critic.set_learning_rate(1e-5)
 
         agent_systems[rover_id] = fitness_critic_system
+
+def mean_fitness_critic_flat(arg_dict):
+    multiagent_system = arg_dict["trial"].system
+
+    agent_systems = multiagent_system.agent_systems()
+
+    for rover_id in range(len(agent_systems)):
+        evolving_system = agent_systems[rover_id]
+
+        map = NFlatNetwork(10, 160)
+        critic = DifferentiableCriticMap(map)
+
+        intermediate_critic = DifferentiableFunctionApproximator(critic)
+
+        fitness_critic_system = (
+            MeanFitnessCriticSystem(
+                evolving_system,
+                intermediate_critic))
+
+        fitness_critic_system.trajectory_buffer().set_capacity(100)
+        fitness_critic_system.experience_target_buffer.set_capacity(5000)
+        #
+        # fitness_critic_system.n_critic_updates_per_epoch = 99
+
+        fitness_critic_system.uses_experience_targets_for_updates = True
+        fitness_critic_system.n_critic_updates_per_epoch = 5000
+
+
+        intermediate_critic.set_learning_rate(1e-5)
+
+        agent_systems[rover_id] = fitness_critic_system
+
+
 
 
 

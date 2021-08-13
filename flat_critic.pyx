@@ -29,6 +29,8 @@ from goldenrockefeller.policyopt.buffer cimport ShuffleBuffer, new_ShuffleBuffer
 from goldenrockefeller.policyopt.fitness_critic cimport FitnessCriticSystem, init_FitnessCriticSystem
 from goldenrockefeller.policyopt.system cimport BaseSystem
 
+from goldenrockefeller.policyopt.map cimport BaseDifferentiableMap
+
 
 import sys
 #
@@ -114,6 +116,57 @@ cdef class FlatNetwork():
 
     cpdef DoubleArray grad_wrt_parameters(self, DoubleArray input, double output_grad):
         return DoubleArray_from_valarray(self.core.get().grad_wrt_parameters(valarray_from_DoubleArray(input), output_grad))
+
+
+    @property
+    def leaky_scale(self):
+        return self.core.get().leaky_scale
+
+    @leaky_scale.setter
+    def leaky_scale(self, double value):
+        self.core.get().leaky_scale = value
+
+cdef class NFlatNetwork(BaseDifferentiableMap):
+    cdef shared_ptr[CppFlatNetwork] core
+
+    def __init__(self, size_t n_in_dims, size_t n_hidden_units):
+        self.core = make_shared[CppFlatNetwork](n_in_dims, n_hidden_units)
+
+    cpdef NFlatNetwork copy(self, copy_obj = None):
+        cdef NFlatNetwork new_network
+        cdef unique_ptr[CppFlatNetwork] new_core
+
+        if copy_obj is None:
+            new_network = NFlatNetwork.__new__(NFlatNetwork)
+        else:
+            new_network = copy_obj
+
+        new_core.swap(self.core.get().copy())
+        new_network.core.reset(new_core.get())
+        new_core.release()
+
+        return new_network
+
+
+    cpdef DoubleArray parameters(self):
+        return DoubleArray_from_valarray(self.core.get().parameters())
+
+    cpdef void set_parameters(self, parameters)  except *:
+        self.core.get().set_parameters(valarray_from_DoubleArray(parameters))
+
+    cpdef Py_ssize_t n_parameters(self) except *:
+        return self.core.get().n_parameters()
+
+    cpdef DoubleArray eval(self, input):
+        cdef double res = self.core.get().eval(valarray_from_DoubleArray(input))
+        cdef DoubleArray res_arr = new_DoubleArray(1)
+        res_arr.view[0] = res
+        return res_arr
+
+    cpdef DoubleArray grad_wrt_parameters(self,  input, output_grad = None):
+        if output_grad is None:
+            raise NotImplementedError()
+        return DoubleArray_from_valarray(self.core.get().grad_wrt_parameters(valarray_from_DoubleArray(input), output_grad.view[0]))
 
 
     @property

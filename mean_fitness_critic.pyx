@@ -179,6 +179,28 @@ cdef class MeanFitnessCriticSystem(FitnessCriticSystem):
         system = self.super_system()
         system.prep_for_epoch()
 
+cdef class MonteFitnessCriticSystem(MeanFitnessCriticSystem):
+    cpdef void extract_experience_targets(self, list trajectory) except *:
+        cdef ExperienceDatum experience
+        cdef double sample_fitness
+        cdef TargetEntry target_entry
+        cdef DoubleArray target
+
+        sample_fitness = 0.
+        traj_eval = 0.
+
+        for experience in trajectory:
+            sample_fitness += experience.reward
+
+        for experience in trajectory:
+            target_entry = new_TargetEntry()
+            target_entry.input = experience
+            target = new_DoubleArray(1)
+            target.view[0] = sample_fitness
+            target_entry.target = target
+            self.experience_target_buffer.add_staged_datum(target_entry)
+
+
 cdef class TrajFitnessCriticSystem(FitnessCriticSystem):
 
     @cython.locals(trajectory = list, target_entries = list)

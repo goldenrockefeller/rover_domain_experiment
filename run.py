@@ -15,7 +15,7 @@ def run():
 
     mods_to_mix = [
         (global_reward, difference_reward),
-        (mean_fitness_critic_flat,)
+        (monte_fitness_critic_flat,)
     ]
 
     # Does it work without etb? Use smaller learning rate?
@@ -35,7 +35,7 @@ def run():
 
 
 if __name__ == '__main__':
-    # r = Runner('test', (global_reward, mean_fitness_critic_flat))
+    # r = Runner('test', (global_reward, monte_fitness_critic_flat))
     # r.new_run()
 
     n_processes = int(sys.argv[1])

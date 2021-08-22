@@ -9,13 +9,13 @@ import sys
 
 
 def run():
-    experiment_name = "15Agents4Poi_nreq_4_redo_G"
+    experiment_name = "15Agents4Poi_nreq_4_redo_H"
     n_stats_run_per_process = 1
 
 
     mods_to_mix = [
         (global_reward, difference_reward),
-        (monte_fitness_critic_flat,)
+        (mean_fitness_critic_fixed, mean_fitness_critic_flat, none)
     ]
 
     # Does it work without etb? Use smaller learning rate?
@@ -32,21 +32,21 @@ def run():
         for runner in runners:
             runner.new_run()
 
-
+#
 
 if __name__ == '__main__':
-    # r = Runner('test', (global_reward, monte_fitness_critic_flat))
-    # r.new_run()
-
-    n_processes = int(sys.argv[1])
-    print(f"Number of processes: {n_processes}")
-
-    processes = [Process(target = run) for _ in range(n_processes)]
-
-    for process in processes:
-        process.start()
-        sleep(2)
-
-
-    for process in processes:
-        process.join()
+    r = Runner('test', (global_reward, mean_fitness_critic_fixed))
+    r.new_run()
+    #
+    # n_processes = int(sys.argv[1])
+    # print(f"Number of processes: {n_processes}")
+    #
+    # processes = [Process(target = run) for _ in range(n_processes)]
+    #
+    # for process in processes:
+    #     process.start()
+    #     sleep(2)
+    #
+    #
+    # for process in processes:
+    #     process.join()

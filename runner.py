@@ -134,7 +134,7 @@ class Runner:
                     n_state_dims,
                     n_policy_hidden_neurons,
                     n_action_dims)
-                map.leaky_scale = 0.1
+                map.leaky_scale = 0.0
                 map = TanhLayer(map)
                 phenotype = (DefaultPhenotype(map))
 

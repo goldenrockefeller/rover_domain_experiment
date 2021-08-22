@@ -80,7 +80,7 @@ def flat_critic_6_etb(arg_dict):
 
         fitness_critic_system = (
             FlatFitnessCriticSystem(
-                evolving_system, 10, 160 ))
+                evolving_system, 10, 80 ))
 
         intermediate_critic = fitness_critic_system.intermediate_critic()
 
@@ -110,7 +110,7 @@ def flat_critic_5_etb(arg_dict):
 
         fitness_critic_system = (
             FlatFitnessCriticSystem(
-                evolving_system, 10, 160 ))
+                evolving_system, 10, 80 ))
 
         intermediate_critic = fitness_critic_system.intermediate_critic()
 
@@ -139,8 +139,8 @@ def mean_fitness_critic(arg_dict):
     for rover_id in range(len(agent_systems)):
         evolving_system = agent_systems[rover_id]
 
-        map = ReluLinear(10, 160, 1)
-        map.leaky_scale = 0.1
+        map = ReluLinear(10, 80, 1)
+        map.leaky_scale = 0.01
         critic = DifferentiableCriticMap(map)
 
         intermediate_critic = DifferentiableFunctionApproximator(critic)
@@ -172,8 +172,8 @@ def mean_fitness_critic_fixed(arg_dict):
     for rover_id in range(len(agent_systems)):
         evolving_system = agent_systems[rover_id]
 
-        map = ReluLinear(10, 160, 1, True)
-        map.leaky_scale = 0.1
+        map = ReluLinear(10, 80, 1, True)
+        map.leaky_scale = 0.01
         critic = DifferentiableCriticMap(map)
 
         intermediate_critic = DifferentiableFunctionApproximator(critic)
@@ -204,7 +204,7 @@ def mean_fitness_critic_flat(arg_dict):
     for rover_id in range(len(agent_systems)):
         evolving_system = agent_systems[rover_id]
 
-        map = NFlatNetwork(10, 160)
+        map = NFlatNetwork(10, 80)
         critic = DifferentiableCriticMap(map)
 
         intermediate_critic = DifferentiableFunctionApproximator(critic)
@@ -225,6 +225,8 @@ def mean_fitness_critic_flat(arg_dict):
 
         intermediate_critic.set_learning_rate(1e-5)
 
+        # intermediate_critic.set_learning_rate(1e-3)
+
         agent_systems[rover_id] = fitness_critic_system
 
 def monte_fitness_critic_flat(arg_dict):
@@ -235,7 +237,7 @@ def monte_fitness_critic_flat(arg_dict):
     for rover_id in range(len(agent_systems)):
         evolving_system = agent_systems[rover_id]
 
-        map = NFlatNetwork(10, 160)
+        map = NFlatNetwork(10, 80)
         critic = DifferentiableCriticMap(map)
 
         intermediate_critic = DifferentiableFunctionApproximator(critic)
@@ -272,7 +274,7 @@ def monte_flat_critic_4_etb(arg_dict):
 
         fitness_critic_system = (
             MonteFlatFitnessCriticSystem(
-                evolving_system, 10, 160 ))
+                evolving_system, 10, 80 ))
 
         intermediate_critic = fitness_critic_system.intermediate_critic()
 
@@ -303,7 +305,7 @@ def monte_flat_critic_5_etb(arg_dict):
 
         fitness_critic_system = (
             MonteFlatFitnessCriticSystem(
-                evolving_system, 10, 160 ))
+                evolving_system, 10, 80 ))
 
         intermediate_critic = fitness_critic_system.intermediate_critic()
 
@@ -332,7 +334,7 @@ def discount_flat_critic_5_etb(arg_dict):
 
         fitness_critic_system = (
             DiscountFlatFitnessCriticSystem(
-                evolving_system, 10, 160 ))
+                evolving_system, 10, 80 ))
 
         intermediate_critic = fitness_critic_system.intermediate_critic()
 
@@ -362,7 +364,7 @@ def discount_flat_critic_5_etb(arg_dict):
 
         fitness_critic_system = (
             DiscountFlatFitnessCriticSystem(
-                evolving_system, 10, 160 ))
+                evolving_system, 10, 80 ))
 
         intermediate_critic = fitness_critic_system.intermediate_critic()
 

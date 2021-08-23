@@ -226,6 +226,14 @@ cdef class FlatNetworkApproximator(BaseFunctionApproximator):
     def learning_mode(self, int value):
         self.core.get().optimizer.learning_mode = value
 
+    @property
+    def leaky_scale(self):
+        return self.core.get().flat_network.get().leaky_scale
+
+    @leaky_scale.setter
+    def leaky_scale(self, double value):
+        self.core.get().flat_network.get().leaky_scale = value
+
 
 
 cdef class MonteFlatNetworkApproximator(FlatNetworkApproximator):

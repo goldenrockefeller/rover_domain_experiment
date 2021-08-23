@@ -28,6 +28,7 @@ cdef extern from "cpp_core/flat_network_approximator.hpp" namespace "goldenrocke
         valarray[double] grad_wrt_parameters(const valarray[double]&, double) except +
 
 
+
     cdef cppclass FlatNetworkOptimizer:
         double time_horizon
         double epsilon
@@ -41,11 +42,14 @@ cdef extern from "cpp_core/flat_network_approximator.hpp" namespace "goldenrocke
 
     cdef cppclass FlatNetworkApproximator:
         FlatNetworkOptimizer optimizer
+        shared_ptr[FlatNetwork] flat_network
 
         FlatNetworkApproximator(size_t, size_t) except +
         double eval(const Experience&) except +
         void update(const vector[Experience] &) except +
         void update(const Experience &, double) except +
+
+
 
     cdef cppclass MonteFlatNetworkApproximator(FlatNetworkApproximator):
         FlatNetworkOptimizer optimizer

@@ -117,6 +117,7 @@ def flat_critic_5_etb(arg_dict):
         intermediate_critic.time_horizon = 10
         intermediate_critic.learning_mode = 0
         intermediate_critic.learning_rate = 1e-5
+        intermediate_critic.leaky_scale = 0.01
 
         fitness_critic_system.trajectory_buffer().set_capacity(100)
         fitness_critic_system.experience_target_buffer.set_capacity(5000)

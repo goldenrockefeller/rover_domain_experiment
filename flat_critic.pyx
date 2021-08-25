@@ -235,6 +235,13 @@ cdef class FlatNetworkApproximator(BaseFunctionApproximator):
         self.core.get().flat_network.get().leaky_scale = value
 
 
+    @property
+    def flat_network(self):
+        cdef FlatNetwork f = FlatNetwork.__new__(FlatNetwork)
+
+        f.core = self.core.get().flat_network
+
+        return f
 
 cdef class MonteFlatNetworkApproximator(FlatNetworkApproximator):
 
@@ -462,7 +469,7 @@ cdef class FlatFitnessCriticSystem(FitnessCriticSystem):
             # raise ValueError()
             trajectory = self._trajectory_buffer.next_shuffled_datum()
             # print(approximator.eval(target_entry.input))
-            sys.stdout.flush()
+            # sys.stdout.flush()
             # raise ValueError()
             # print(len(trajectory))
         system = self.super_system()

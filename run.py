@@ -6,19 +6,21 @@ import random
 from multiprocessing import Process
 from time import sleep
 import sys
+import signal
+
 
 
 def run():
+
     experiment_name = "15Agents4Poi_nreq_4_redo_H"
     n_stats_run_per_process = 1
 
 
     mods_to_mix = [
         (global_reward, difference_reward),
-        (mean_fitness_critic_fixed, mean_fitness_critic_flat, none)
+        (flat_critic_5_etb, )
     ]
 
-    # Does it work without etb? Use smaller learning rate?
 
 
     runners = [
@@ -32,10 +34,9 @@ def run():
         for runner in runners:
             runner.new_run()
 
-#
 
 if __name__ == '__main__':
-    # r = Runner('test', (global_reward, mean_fitness_critic_fixed))
+    # r = Runner('test', (global_reward, flat_critic_5_etb))
     # r.new_run()
 
     n_processes = int(sys.argv[1])

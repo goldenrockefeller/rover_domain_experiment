@@ -67,27 +67,12 @@ namespace goldenrockefeller {
 			
 		};
 
-		struct FlatNetworkOptimizer {
-			double time_horizon;
-			double epsilon;
-			double learning_rate;
-			std::valarray<double> pressures;
-			int learning_mode; // 0 - unconditioned, 1 - conditioned, 2 - conditioned & accelerated
-
-			FlatNetworkOptimizer(const std::valarray<double>& init_parameters);
-
-			void add_pressures(const std::valarray<double>& grad);
-			void add_pressures(const std::vector<std::valarray<double>>& grads);
-			std::valarray<double> delta_parameters(const std::valarray<double>& grad, double error) const;
-			void discount_pressures();
-		};
-
 		struct FlatNetworkApproximator: public Approximator {
 		protected:
 			virtual FlatNetworkApproximator* copy_impl() const override;
 		public:			
 
-			FlatNetworkOptimizer optimizer;
+			double learning_rate;
 			std::shared_ptr<FlatNetwork> flat_network;
 
 

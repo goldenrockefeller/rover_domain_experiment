@@ -84,8 +84,6 @@ def flat_critic_6_etb(arg_dict):
 
         intermediate_critic = fitness_critic_system.intermediate_critic()
 
-        intermediate_critic.time_horizon = 10
-        intermediate_critic.learning_mode = 0
         intermediate_critic.learning_rate = 1e-6
 
         fitness_critic_system.trajectory_buffer().set_capacity(100)
@@ -114,8 +112,6 @@ def flat_critic_5_etb(arg_dict):
 
         intermediate_critic = fitness_critic_system.intermediate_critic()
 
-        intermediate_critic.time_horizon = 10
-        intermediate_critic.learning_mode = 0
         intermediate_critic.learning_rate = 1e-5
         intermediate_critic.leaky_scale = 0.01
 
@@ -279,8 +275,6 @@ def monte_flat_critic_4_etb(arg_dict):
 
         intermediate_critic = fitness_critic_system.intermediate_critic()
 
-        intermediate_critic.time_horizon = 10
-        intermediate_critic.learning_mode = 0
         intermediate_critic.learning_rate = 1e-4
 
         fitness_critic_system.trajectory_buffer().set_capacity(100)
@@ -310,8 +304,6 @@ def monte_flat_critic_5_etb(arg_dict):
 
         intermediate_critic = fitness_critic_system.intermediate_critic()
 
-        intermediate_critic.time_horizon = 10
-        intermediate_critic.learning_mode = 0
         intermediate_critic.learning_rate = 1e-5
 
         fitness_critic_system.trajectory_buffer().set_capacity(100)
@@ -339,8 +331,6 @@ def discount_flat_critic_5_etb(arg_dict):
 
         intermediate_critic = fitness_critic_system.intermediate_critic()
 
-        intermediate_critic.time_horizon = 10
-        intermediate_critic.learning_mode = 0
         intermediate_critic.learning_rate = 1e-5
 
         fitness_critic_system.trajectory_buffer().set_capacity(1)
@@ -369,8 +359,6 @@ def discount_flat_critic_5_etb(arg_dict):
 
         intermediate_critic = fitness_critic_system.intermediate_critic()
 
-        intermediate_critic.time_horizon = 10
-        intermediate_critic.learning_mode = 0
         intermediate_critic.learning_rate = 1e-5
 
         fitness_critic_system.trajectory_buffer().set_capacity(100)

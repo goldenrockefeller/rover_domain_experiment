@@ -324,79 +324,6 @@ namespace goldenrockefeller {
 			throw runtime_error("not implemented");
 		}
 
-		FlatNetworkOptimizer::FlatNetworkOptimizer(const valarray<double>& init_parameters) :
-			time_horizon(100),
-			epsilon(1e-9),
-			learning_rate(0.5),
-			pressures(0., init_parameters.size()),
-			learning_mode(0)
-		{}
-		
-		void FlatNetworkOptimizer::add_pressures(const valarray<double>& grad) {
-			if (this->learning_mode == 1 || this->learning_mode == 2) {
-				// (1) conditioned or (2) conditioned & accelerated
-				valarray<double> local_pressures = grad * grad;
-				valarray<double> relative_pressures = local_pressures / (this->pressures + local_pressures + this->epsilon);
-
-				double sum = relative_pressures.sum();
-				double sum_of_sqr = (relative_pressures * relative_pressures).sum();
-
-				double inv_step_size = sum * sum / (sum_of_sqr + this->epsilon);
-
-
-				this->pressures += local_pressures * inv_step_size;
-			}
-		}
-
-		void FlatNetworkOptimizer::add_pressures(const vector<valarray<double>>& grads) {
-			if (this->learning_mode == 1 || this->learning_mode == 2) {
-				// (1) conditioned or (2) conditioned & accelerated
-				valarray<double> basic_pressures = this->pressures;
-
-				for (const valarray<double>& grad : grads) {
-					basic_pressures += grad * grad;
-				}
-
-				for (const valarray<double>& grad : grads) {
-					valarray<double> local_pressures = grad * grad;
-					valarray<double> relative_pressures = local_pressures / (basic_pressures + this->epsilon);
-
-					double sum = relative_pressures.sum();
-					double sum_of_sqr = (relative_pressures * relative_pressures).sum();
-
-					double inv_step_size = sum * sum / (sum_of_sqr + this->epsilon);
-
-					this->pressures += local_pressures * inv_step_size;
-				}
-			}
-		}
-
-		valarray<double> FlatNetworkOptimizer::delta_parameters(const valarray<double>& grad, double error) const {
-			// Must add pressures before hand.
-
-			valarray<double> delta_parameters;
-			if (this->learning_mode == 0) {
-				// (0) unconditioned
-				delta_parameters = grad * error * this->learning_rate;
-
-			}
-			else if (this->learning_mode == 1 || this->learning_mode == 2) {
-				// (1) conditioned or (2) conditioned & accelerated
-				delta_parameters = this->learning_rate * grad * error  / (this->pressures + this->epsilon);
-				
-			}
-
-			return delta_parameters;
-		}
-
-		void FlatNetworkOptimizer::discount_pressures() {
-			if (this->learning_mode == 1 || this->learning_mode == 2) {
-				// (1) conditioned or (2) conditioned & accelerated
-				this->pressures *= 1. - 1. / this->time_horizon;
-			}
-		}
-
-
 		FlatNetworkApproximator::FlatNetworkApproximator() :
 			FlatNetworkApproximator::FlatNetworkApproximator(
 				make_shared<FlatNetwork>()
@@ -406,9 +333,8 @@ namespace goldenrockefeller {
 		FlatNetworkApproximator::FlatNetworkApproximator(
 			shared_ptr<FlatNetwork> flat_network
 		) :
-
-			flat_network(flat_network),
-			optimizer(flat_network->parameters())
+			learning_rate(0.5),
+			flat_network(flat_network)
 		{}
 
 		FlatNetworkApproximator::FlatNetworkApproximator(std::size_t n_in_dims, std::size_t n_hidden_units) :
@@ -458,12 +384,10 @@ namespace goldenrockefeller {
 			valarray<double> grad(0., this->n_parameters());
 
 			for (const Experience& experience : experiences) {
-				grad += this->grad_wrt_parameters(experience, 1.);
+				grad += this->grad_wrt_parameters(experience, error);
 			}
 
-			this->optimizer.add_pressures(grad);
-			valarray<double> delta_parameters = this->optimizer.delta_parameters(grad, error);
-			this->optimizer.discount_pressures();
+			valarray<double> delta_parameters = grad * this->learning_rate;
 
 			valarray<double> parameters = this->parameters();
 			this->set_parameters(parameters + delta_parameters);
@@ -476,11 +400,7 @@ namespace goldenrockefeller {
 			double error = target_value - eval;
 
 			valarray<double> grad = this->grad_wrt_parameters(experience, error);
-			valarray<double> delta_parameters = grad * this->optimizer.learning_rate;
-
-			// this->optimizer.add_pressures(grad);
-			// valarray<double> delta_parameters = this->optimizer.delta_parameters(grad, error);
-			// this->optimizer.discount_pressures();
+			valarray<double> delta_parameters = grad * this->learning_rate;
 
 			this->set_parameters(this->parameters() + delta_parameters);
 		}
@@ -494,26 +414,16 @@ namespace goldenrockefeller {
 			double traj_eval = 0.;
 			valarray<double> delta_parameters(0., this->n_parameters());
 
-			vector<valarray<double>> grads;
-			grads.reserve(experiences.size());
-
 			for (const Experience& experience : experiences) {
 				sample_fitness += experience.reward;
-			
-				grads.push_back(this->grad_wrt_parameters(experience, 1.));
 			}
-			this->optimizer.add_pressures(grads);
 
-			size_t experience_id = 0;
 			for (const Experience& experience : experiences) {
-
 				double traj_eval = this->eval(experience);
 				double error = sample_fitness - traj_eval;
-				valarray<double> grad = grads[experience_id];
-				delta_parameters += this->optimizer.delta_parameters(grad, error);
-				experience_id += 1;
+				valarray<double> grad = this->grad_wrt_parameters(experience, error);
+				delta_parameters += grad * this->learning_rate;
 			}
-			this->optimizer.discount_pressures();
 
 			valarray<double> parameters = this->parameters() + delta_parameters;
 			this->set_parameters(parameters);
@@ -528,15 +438,6 @@ namespace goldenrockefeller {
 			double step_eval = 0.;
 			valarray<double> delta_parameters(0., this->n_parameters());
 
-			vector<valarray<double>> grads;
-			grads.reserve(experiences.size());
-
-			for (const Experience& experience : experiences) {
-				
-
-				grads.push_back(this->grad_wrt_parameters(experience, 1.));
-			}
-			this->optimizer.add_pressures(grads);
 
 			size_t experience_id = 0;
 			for (const Experience& experience : experiences) {
@@ -550,11 +451,10 @@ namespace goldenrockefeller {
 				}
 				double step_eval = this->eval(experience);
 				double error = sample_fitness - step_eval;
-				valarray<double> grad = grads[experience_id];
-				delta_parameters += this->optimizer.delta_parameters(grad, error);
+				valarray<double> grad =this->grad_wrt_parameters(experience, error);
+				delta_parameters += grad * this->learning_rate;
 				experience_id += 1;
 			}
-			this->optimizer.discount_pressures();
 
 
 			valarray<double> parameters = this->parameters();
@@ -571,16 +471,6 @@ namespace goldenrockefeller {
 			size_t n_steps = experiences.size();
 			valarray<double> delta_parameters(0., this->n_parameters());
 
-			vector<valarray<double>> grads;
-			grads.reserve(experiences.size());
-
-			for (const Experience& experience : experiences) {
-				valarray<double> grad = this->grad_wrt_parameters(experience, 1.);
-				
-				grads.push_back(this->grad_wrt_parameters(experience, 1.));
-			}
-			this->optimizer.add_pressures(grads);
-
 			size_t experience_id = 0;
 			for (size_t step_id = 0; step_id < n_steps; step_id ++) {
 				const  Experience& experience = experiences[step_id];
@@ -593,11 +483,10 @@ namespace goldenrockefeller {
 
 					td_error = experience.reward + this->eval(next_experience) - this->eval(experience);
 				}
-				valarray<double> grad = grads[experience_id];
-				delta_parameters += this->optimizer.delta_parameters(grad, td_error);
+				valarray<double> grad = this->grad_wrt_parameters(experience, td_error);
+				delta_parameters += grad * this->learning_rate;
 				experience_id += 1;
 			}
-			this->optimizer.discount_pressures();
 
 			valarray<double> parameters = this->parameters();
 			this->set_parameters(parameters + delta_parameters);
@@ -619,15 +508,6 @@ namespace goldenrockefeller {
 		void UFlatNetworkApproximator::update(const std::vector<Experience>& experiences) {
 			size_t n_steps = experiences.size();
 			valarray<double> delta_parameters(0., this->n_parameters());
-
-			vector<valarray<double>> grads;
-			grads.reserve(experiences.size());
-
-			for (const Experience& experience : experiences) {
-				valarray<double> grad = this->grad_wrt_parameters(experience, 1.);
-				grads.push_back(this->grad_wrt_parameters(experience, 1.));
-			}
-			this->optimizer.add_pressures(grads);
 			
 			size_t experience_id = 0;
 			for (size_t step_id = 0; step_id < n_steps; step_id++) {
@@ -643,11 +523,10 @@ namespace goldenrockefeller {
 					td_error = prev_experience.reward + this->eval(prev_experience) - this->eval(experience);
 				}
 
-				valarray<double> grad = grads[experience_id];
-				delta_parameters += this->optimizer.delta_parameters(grad, td_error);
+				valarray<double> grad = this->grad_wrt_parameters(experience, td_error);
+				delta_parameters += grad * this->learning_rate;
 				experience_id += 1;
 			}
-			this->optimizer.discount_pressures();
 
 			valarray<double> parameters = this->parameters();
 			this->set_parameters(parameters + delta_parameters);

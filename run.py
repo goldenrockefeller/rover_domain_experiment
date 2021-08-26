@@ -12,7 +12,7 @@ import signal
 
 def run():
 
-    experiment_name = "15Agents4Poi_nreq_4_redo_H"
+    experiment_name = "15Agents4Poi_nreq_4_redo_H_testmode"
     n_stats_run_per_process = 1
 
 
@@ -36,18 +36,18 @@ def run():
 
 
 if __name__ == '__main__':
-    # r = Runner('test', (global_reward, flat_critic_5_etb))
-    # r.new_run()
+    r = Runner('test', (global_reward, flat_critic_5_etb))
+    r.new_run()
 
-    n_processes = int(sys.argv[1])
-    print(f"Number of processes: {n_processes}")
-
-    processes = [Process(target = run) for _ in range(n_processes)]
-
-    for process in processes:
-        process.start()
-        sleep(2)
-
-
-    for process in processes:
-        process.join()
+    # n_processes = int(sys.argv[1])
+    # print(f"Number of processes: {n_processes}")
+    #
+    # processes = [Process(target = run) for _ in range(n_processes)]
+    #
+    # for process in processes:
+    #     process.start()
+    #     sleep(2)
+    #
+    #
+    # for process in processes:
+    #     process.join()

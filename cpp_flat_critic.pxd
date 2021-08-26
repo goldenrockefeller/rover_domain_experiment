@@ -27,62 +27,34 @@ cdef extern from "cpp_core/flat_network_approximator.hpp" namespace "goldenrocke
         double eval(const valarray[double]&) except +
         valarray[double] grad_wrt_parameters(const valarray[double]&, double) except +
 
-
-
-    cdef cppclass FlatNetworkOptimizer:
-        double time_horizon
-        double epsilon
-        double learning_rate
-        int learning_mode
-
     cdef cppclass Approximator:
         double eval(const Experience&) except +
-        void update(const vector[Experience] &) except +
+        void trajectory_update "update"(const vector[Experience] &) except +
         void update(const Experience &, double) except +
 
-    cdef cppclass FlatNetworkApproximator:
-        FlatNetworkOptimizer optimizer
+    cdef cppclass FlatNetworkApproximator(Approximator):
+        double learning_rate
         shared_ptr[FlatNetwork] flat_network
 
         FlatNetworkApproximator(size_t, size_t) except +
-        double eval(const Experience&) except +
-        void update(const vector[Experience] &) except +
-        void update(const Experience &, double) except +
-
-
 
     cdef cppclass MonteFlatNetworkApproximator(FlatNetworkApproximator):
-        FlatNetworkOptimizer optimizer
 
         MonteFlatNetworkApproximator(size_t, size_t) except +
-        double eval(const Experience&) except +
-        void update(const vector[Experience] &) except +
-        void update(const Experience &, double) except +
 
     cdef cppclass DiscountFlatNetworkApproximator(FlatNetworkApproximator):
-        FlatNetworkOptimizer optimizer
 
         DiscountFlatNetworkApproximator(size_t, size_t) except +
-        double eval(const Experience&) except +
-        void update(const vector[Experience] &) except +
 
     cdef cppclass QFlatNetworkApproximator(FlatNetworkApproximator):
-        FlatNetworkOptimizer optimizer
 
         QFlatNetworkApproximator(size_t, size_t) except +
-        double eval(const Experience&) except +
-        void update(const vector[Experience] &) except +
 
     cdef cppclass UFlatNetworkApproximator(FlatNetworkApproximator):
-        FlatNetworkOptimizer optimizer
 
         UFlatNetworkApproximator(size_t, size_t) except +
-        double eval(const Experience&) except +
-        void update(const vector[Experience] &) except +
 
-    cdef cppclass UqFlatNetworkApproximator(FlatNetworkApproximator):
+    cdef cppclass UqFlatNetworkApproximator(Approximator):
         UqFlatNetworkApproximator(shared_ptr[UFlatNetworkApproximator], shared_ptr[QFlatNetworkApproximator]) except +
 
-        double eval(const Experience&) except +
-        void update(const vector[Experience] &) except +
 

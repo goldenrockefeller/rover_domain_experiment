@@ -189,42 +189,18 @@ cdef class FlatNetworkApproximator(BaseFunctionApproximator):
         return self.core.get().eval(CppExperienceDatum_from_ExperienceDatum(input))
 
     cpdef void update_using_trajectory(self, list trajectory) except *:
-        self.core.get().update(vector_from_trajectory(trajectory))
+        self.core.get().trajectory_update(vector_from_trajectory(trajectory))
 
     cpdef void update_using_experience(self, ExperienceDatum experience, double target_value) except *:
         self.core.get().update(CppExperienceDatum_from_ExperienceDatum(experience), target_value)
 
     @property
-    def time_horizon(self):
-        return self.core.get().optimizer.time_horizon
-
-    @time_horizon.setter
-    def time_horizon(self, double value):
-        self.core.get().optimizer.time_horizon = value
-
-    @property
-    def epsilon(self):
-        return self.core.get().optimizer.epsilon
-
-    @epsilon.setter
-    def epsilon(self, double value):
-        self.core.get().optimizer.epsilon = value
-
-    @property
     def learning_rate(self):
-        return self.core.get().optimizer.learning_rate
+        return self.core.get().learning_rate
 
     @learning_rate.setter
     def learning_rate(self, double value):
-        self.core.get().optimizer.learning_rate = value
-
-    @property
-    def learning_mode(self):
-        return self.core.get().optimizer.learning_mode
-
-    @learning_mode.setter
-    def learning_mode(self, int value):
-        self.core.get().optimizer.learning_mode = value
+        self.core.get().learning_rate = value
 
     @property
     def leaky_scale(self):

@@ -17,6 +17,7 @@ namespace goldenrockefeller {
 		struct FlatNetwork {
 
 			std::vector<std::valarray<double>> linear;
+			std::valarray<double> fixed_layer;
 			std::valarray<double> bias0;
 			double bias1;
 			double leaky_scale;

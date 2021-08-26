@@ -59,6 +59,7 @@ namespace goldenrockefeller {
 			}
 
 			this->bias0.resize(n_hidden_units);
+			this->fixed_layer.resize(n_hidden_units);
 
 			std::random_device rd;  //Will be used to obtain a seed for the random number engine
 			std::mt19937_64 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
@@ -77,7 +78,13 @@ namespace goldenrockefeller {
 			}
 
 			this->bias1 = hidden_distrib(gen);
-			
+
+			// Fixed layer. Half of the fixed weights are 1, other half is 
+			size_t half_fixed_layer_size = fixed_layer.size() / 2; // integer division
+			this->fixed_layer = 1.;
+			for (size_t id = 0; id < half_fixed_layer_size; id ++) {
+				this->fixed_layer[id] = -1;
+			}
 		}
 
 		unique_ptr<FlatNetwork> FlatNetwork::copy() const {
@@ -221,7 +228,7 @@ namespace goldenrockefeller {
 
 			// Res1 is the output of the second layer (bias1) given Res0 (output of first layer).
 			double res1;
-			res1 = res0.sum() + this->bias1;
+			res1 = (res0 * this->fixed_layer).sum() + this->bias1;
 
 			return res1;
 		}
@@ -261,17 +268,17 @@ namespace goldenrockefeller {
 			valarray<double> pre_relu_res{ res0 };
 			
 			// Get intermediate gradients.
-			valarray<double> grad_wrt_res0;
-			grad_wrt_res0.resize(n_hidden_units);
-			grad_wrt_res0 = output_grad;
+			valarray<double> grad_wrt_post_relu_res;
+			grad_wrt_post_relu_res.resize(n_hidden_units);
+			grad_wrt_post_relu_res = output_grad * this->fixed_layer;
 
 			valarray<double> grad_wrt_pre_relu_res;
 			grad_wrt_pre_relu_res.resize(n_hidden_units);
 
 			for (size_t i{ 0 }; i < n_hidden_units; i++) {
 				grad_wrt_pre_relu_res[i]
-					+= grad_wrt_res0[i] * (pre_relu_res[i] > 0.)
-					+ grad_wrt_res0[i] * (pre_relu_res[i] <= 0.) * this->leaky_scale;
+					+= grad_wrt_post_relu_res[i] * (pre_relu_res[i] > 0.)
+					+ grad_wrt_post_relu_res[i] * (pre_relu_res[i] <= 0.) * this->leaky_scale;
 			}
 
 
@@ -289,7 +296,7 @@ namespace goldenrockefeller {
 				slice_start += slice_length;
 			}
 
-			// Gradient for Bias
+			// Gradient for Bias0
 			slice_length = n_hidden_units;
 			grad[slice(slice_start, slice_length, 1)] = grad_wrt_pre_relu_res;
 			slice_start += slice_length;

@@ -7,14 +7,8 @@ cimport cython
 from cpp_flat_critic cimport valarray
 from cpp_flat_critic cimport Experience as CppExperienceDatum
 from cpp_flat_critic cimport FlatNetworkApproximator as CppFlatNetworkApproximator
-from cpp_flat_critic cimport MonteFlatNetworkApproximator as CppMonteFlatNetworkApproximator
-from cpp_flat_critic cimport DiscountFlatNetworkApproximator as CppDiscountFlatNetworkApproximator
-from cpp_flat_critic cimport QFlatNetworkApproximator as CppQFlatNetworkApproximator
-from cpp_flat_critic cimport UFlatNetworkApproximator as CppUFlatNetworkApproximator
-from cpp_flat_critic cimport UqFlatNetworkApproximator as CppUqFlatNetworkApproximator
 from cpp_flat_critic cimport FlatNetwork as CppFlatNetwork
 from cpp_flat_critic cimport Approximator as CppApproximator
-
 from libcpp.memory cimport shared_ptr, unique_ptr, make_shared
 from libcpp.vector cimport vector
 from libcpp.utility cimport move
@@ -177,8 +171,6 @@ cdef class NFlatNetwork(BaseDifferentiableMap):
     def leaky_scale(self, double value):
         self.core.get().leaky_scale = value
 
-
-
 cdef class FlatNetworkApproximator(BaseFunctionApproximator):
     cdef shared_ptr[CppFlatNetworkApproximator] core
 
@@ -187,9 +179,6 @@ cdef class FlatNetworkApproximator(BaseFunctionApproximator):
 
     cpdef eval(self, input):
         return self.core.get().eval(CppExperienceDatum_from_ExperienceDatum(input))
-
-    cpdef void update_using_trajectory(self, list trajectory) except *:
-        self.core.get().trajectory_update(vector_from_trajectory(trajectory))
 
     cpdef void update_using_experience(self, ExperienceDatum experience, double target_value) except *:
         self.core.get().update(CppExperienceDatum_from_ExperienceDatum(experience), target_value)
@@ -203,13 +192,44 @@ cdef class FlatNetworkApproximator(BaseFunctionApproximator):
         self.core.get().learning_rate = value
 
     @property
-    def leaky_scale(self):
-        return self.core.get().flat_network.get().leaky_scale
+    def using_conditioner(self):
+        return self.core.get().using_conditioner
 
-    @leaky_scale.setter
-    def leaky_scale(self, double value):
-        self.core.get().flat_network.get().leaky_scale = value
+    @using_conditioner.setter
+    def using_conditioner(self, bint value):
+        self.core.get().using_conditioner = value
 
+    @property
+    def grad_disturbance_factor(self):
+        return self.core.get().grad_disturbance_factor
+
+    @grad_disturbance_factor.setter
+    def grad_disturbance_factor(self, double value):
+        self.core.get().grad_disturbance_factor = value
+
+    @property
+    def momentum_sustain(self):
+        return self.core.get().momentum_sustain
+
+    @momentum_sustain.setter
+    def momentum_sustain(self, double value):
+        self.core.get().momentum_sustain = value
+
+    @property
+    def eps(self):
+        return self.core.get().eps
+
+    @eps.setter
+    def eps(self, double value):
+        self.core.get().eps = value
+
+    @property
+    def conditioner_time_horizon(self):
+        return self.core.get().conditioner_time_horizon
+
+    @conditioner_time_horizon.setter
+    def conditioner_time_horizon(self, double value):
+        self.core.get().conditioner_time_horizon = value
 
     @property
     def flat_network(self):
@@ -219,140 +239,12 @@ cdef class FlatNetworkApproximator(BaseFunctionApproximator):
 
         return f
 
-cdef class MonteFlatNetworkApproximator(FlatNetworkApproximator):
-
-    def __init__(self, size_t n_in_dims, size_t n_hidden_units):
-        self.core = shared_ptr[CppFlatNetworkApproximator](new CppMonteFlatNetworkApproximator(n_in_dims, n_hidden_units))
-
-
-cdef class DiscountFlatNetworkApproximator(FlatNetworkApproximator):
-
-    def __init__(self, size_t n_in_dims, size_t n_hidden_units):
-        self.core = shared_ptr[CppFlatNetworkApproximator](new CppDiscountFlatNetworkApproximator(n_in_dims, n_hidden_units))
-#
-#
-# cdef class QFlatNetworkApproximator(Approximator):
-#     cdef shared_ptr[CppQFlatNetworkApproximator] core
-#
-#     def __init__(self, size_t n_in_dims, size_t n_hidden_units):
-#         self.core = make_shared[CppQFlatNetworkApproximator](n_in_dims, n_hidden_units)
-#
-#
-#     cpdef eval(self, input):
-#         return self.core.get().eval(CppExperienceDatum_from_ExperienceDatum(input))
-#
-#
-#     cpdef void update_using_trajectory(self, list trajectory) except *:
-#         # TODO trajectory is a sequence (typing)
-#         self.core.get().update(vector_from_trajectory(trajectory))
-#
-#     @property
-#     def time_horizon(self):
-#         return self.core.get().optimizer.time_horizon
-#
-#     @time_horizon.setter
-#     def time_horizon(self, double value):
-#         self.core.get().optimizer.time_horizon = value
-#
-#     @property
-#     def epsilon(self):
-#         return self.core.get().optimizer.epsilon
-#
-#     @epsilon.setter
-#     def epsilon(self, double value):
-#         self.core.get().optimizer.epsilon = value
-#
-#     @property
-#     def learning_rate(self):
-#         return self.core.get().optimizer.learning_rate
-#
-#     @learning_rate.setter
-#     def learning_rate(self, double value):
-#         self.core.get().optimizer.learning_rate = value
-#
-#     @property
-#     def learning_mode(self):
-#         return self.core.get().optimizer.learning_mode
-#
-#     @learning_mode.setter
-#     def learning_mode(self, int value):
-#         self.core.get().optimizer.learning_mode = value
-#
-#
-# cdef class UFlatNetworkApproximator(Approximator):
-#     cdef shared_ptr[CppUFlatNetworkApproximator] core
-#
-#
-#     def __init__(self, size_t n_in_dims, size_t n_hidden_units):
-#         self.core = make_shared[CppUFlatNetworkApproximator](n_in_dims, n_hidden_units)
-#
-#     cpdef eval(self, input):
-#         return self.core.get().eval(CppExperienceDatum_from_ExperienceDatum(input))
-#
-#
-#     cpdef void update_using_trajectory(self, list trajectory) except *:
-#         # TODO trajectory is a sequence (typing)
-#         self.core.get().update(vector_from_trajectory(trajectory))
-#
-#     @property
-#     def time_horizon(self):
-#         return self.core.get().optimizer.time_horizon
-#
-#     @time_horizon.setter
-#     def time_horizon(self, double value):
-#         self.core.get().optimizer.time_horizon = value
-#
-#     @property
-#     def epsilon(self):
-#         return self.core.get().optimizer.epsilon
-#
-#     @epsilon.setter
-#     def epsilon(self, double value):
-#         self.core.get().optimizer.epsilon = value
-#
-#     @property
-#     def learning_rate(self):
-#         return self.core.get().optimizer.learning_rate
-#
-#     @learning_rate.setter
-#     def learning_rate(self, double value):
-#         self.core.get().optimizer.learning_rate = value
-#
-#     @property
-#     def learning_mode(self):
-#         return self.core.get().optimizer.learning_mode
-#
-#     @learning_mode.setter
-#     def learning_mode(self, int value):
-#         self.core.get().optimizer.learning_mode = value
-#
-#
-#
-# cdef class UqFlatNetworkApproximator(Approximator):
-#     cdef shared_ptr[CppUqFlatNetworkApproximator] core
-#
-#     def __init__(
-#         self,
-#         UFlatNetworkApproximator u_approximator,
-#         QFlatNetworkApproximator q_approximator
-#     ):
-#
-#         self.core = make_shared[CppUqFlatNetworkApproximator](u_approximator.core, q_approximator.core)
-#
-#     cpdef eval(self, input):
-#         return self.core.get().eval(CppExperienceDatum_from_ExperienceDatum(input))
-#
-#
-#     cpdef void update_using_trajectory(self, list trajectory) except *:
-#         # TODO trajectory is a sequence (typing)
-#         self.core.get().update(vector_from_trajectory(trajectory))
 
 
 
 cdef class FlatFitnessCriticSystem(FitnessCriticSystem):
     cdef public Py_ssize_t n_critic_updates_per_epoch
     cdef public ShuffleBuffer experience_target_buffer
-    cdef public Py_ssize_t uses_experience_targets_for_updates
 
     def __init__(
             self,
@@ -392,8 +284,7 @@ cdef class FlatFitnessCriticSystem(FitnessCriticSystem):
         cdef list current_trajectory = self.current_trajectory()
         FitnessCriticSystem.update_policy(self)
 
-        if self.uses_experience_targets_for_updates:
-            self.extract_experience_targets(current_trajectory)
+        self.extract_experience_targets(current_trajectory)
 
     cpdef void extract_experience_targets(self, list trajectory) except *:
         cdef ExperienceDatum experience
@@ -435,16 +326,12 @@ cdef class FlatFitnessCriticSystem(FitnessCriticSystem):
 
         if not self._trajectory_buffer.is_empty():
             for update_id in range(n_updates):
-                if self.uses_experience_targets_for_updates:
-                    target_entry = self.experience_target_buffer.next_shuffled_datum()
-                    approximator.update_using_experience(target_entry.input, target_entry.target)
-                else:
-                    trajectory = self._trajectory_buffer.next_shuffled_datum()
-                    approximator.update_using_trajectory(trajectory)
+                target_entry = self.experience_target_buffer.next_shuffled_datum()
+                approximator.update_using_experience(target_entry.input, target_entry.target)
 
             # raise ValueError()
             trajectory = self._trajectory_buffer.next_shuffled_datum()
-            # print(approximator.eval(target_entry.input))
+            print(approximator.eval(target_entry.input))
             # sys.stdout.flush()
             # raise ValueError()
             # print(len(trajectory))
@@ -457,7 +344,7 @@ cdef class MonteFlatFitnessCriticSystem(FlatFitnessCriticSystem):
             self,
             BaseSystem super_system,
             size_t n_in_dims, size_t n_hidden_units):
-        intermediate_critic = MonteFlatNetworkApproximator(n_in_dims, n_hidden_units)
+        intermediate_critic = FlatNetworkApproximator(n_in_dims, n_hidden_units)
         init_FitnessCriticSystem(self, super_system, intermediate_critic)
         self.n_critic_updates_per_epoch = 1
         self.experience_target_buffer = new_ShuffleBuffer()
@@ -487,7 +374,7 @@ cdef class DiscountFlatFitnessCriticSystem(FlatFitnessCriticSystem):
             self,
             BaseSystem super_system,
             size_t n_in_dims, size_t n_hidden_units):
-        intermediate_critic = DiscountFlatNetworkApproximator(n_in_dims, n_hidden_units)
+        intermediate_critic = FlatNetworkApproximator(n_in_dims, n_hidden_units)
         init_FitnessCriticSystem(self, super_system, intermediate_critic)
         self.n_critic_updates_per_epoch = 1
         self.experience_target_buffer = new_ShuffleBuffer()

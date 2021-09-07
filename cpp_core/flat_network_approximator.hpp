@@ -4,6 +4,9 @@
 #include <valarray>
 #include <vector>
 #include <memory>
+#include <functional>
+#include <random>
+
 
 
 namespace goldenrockefeller {
@@ -13,6 +16,7 @@ namespace goldenrockefeller {
 			std::valarray<double> action;
 			double reward;
 		};
+
 
 		struct FlatNetwork {
 
@@ -62,10 +66,11 @@ namespace goldenrockefeller {
 				double output_grad
 			) = 0;
 
-			virtual void update(const std::vector<Experience>& experiences) = 0;
+			//virtual void update(const std::vector<Experience>& experiences) = 0;
 			virtual void update(const Experience& experience, double target_value);
 			
 		};
+
 
 		struct FlatNetworkApproximator: public Approximator {
 		protected:
@@ -74,6 +79,14 @@ namespace goldenrockefeller {
 
 			double learning_rate;
 			std::shared_ptr<FlatNetwork> flat_network;
+			std::mt19937_64 gen;
+			double grad_disturbance_factor;
+			double momentum_sustain;
+			std::valarray<double> momentum;
+			double conditioner_time_horizon;
+			std::valarray<double> pressures;
+			bool using_conditioner;
+			double eps;
 
 
 			FlatNetworkApproximator();
@@ -95,11 +108,11 @@ namespace goldenrockefeller {
 				double output_grad
 			) override;
 
-			virtual void update(const std::vector<Experience>& experiences) override;
+			//virtual void update(const std::vector<Experience>& experiences) override;
 			virtual void update(const Experience& experience, double target_value) override;
 
 		};
-
+/***
 		struct MonteFlatNetworkApproximator : public FlatNetworkApproximator {
 		protected:
 			virtual MonteFlatNetworkApproximator* copy_impl() const override;
@@ -239,7 +252,8 @@ namespace goldenrockefeller {
 
 			virtual void update(const std::vector<Experience>& experiences) override;
 		};
-	}
-}
+**/
+	} // namespace policyopt
+} // namespace goldenrockefeller
 
 #endif

@@ -32,29 +32,16 @@ cdef extern from "cpp_core/flat_network_approximator.hpp" namespace "goldenrocke
         void trajectory_update "update"(const vector[Experience] &) except +
         void update(const Experience &, double) except +
 
+
+
     cdef cppclass FlatNetworkApproximator(Approximator):
         double learning_rate
         shared_ptr[FlatNetwork] flat_network
+        double grad_disturbance_factor
+        double momentum_sustain
+        double eps
+        bint using_conditioner
+        double conditioner_time_horizon
 
         FlatNetworkApproximator(size_t, size_t) except +
-
-    cdef cppclass MonteFlatNetworkApproximator(FlatNetworkApproximator):
-
-        MonteFlatNetworkApproximator(size_t, size_t) except +
-
-    cdef cppclass DiscountFlatNetworkApproximator(FlatNetworkApproximator):
-
-        DiscountFlatNetworkApproximator(size_t, size_t) except +
-
-    cdef cppclass QFlatNetworkApproximator(FlatNetworkApproximator):
-
-        QFlatNetworkApproximator(size_t, size_t) except +
-
-    cdef cppclass UFlatNetworkApproximator(FlatNetworkApproximator):
-
-        UFlatNetworkApproximator(size_t, size_t) except +
-
-    cdef cppclass UqFlatNetworkApproximator(Approximator):
-        UqFlatNetworkApproximator(shared_ptr[UFlatNetworkApproximator], shared_ptr[QFlatNetworkApproximator]) except +
-
 

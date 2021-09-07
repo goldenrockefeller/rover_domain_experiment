@@ -4,7 +4,7 @@ import pyximport; pyximport.install()
 from goldenrockefeller.policyopt.trial import Trial
 from goldenrockefeller.policyopt.multiagent_system import MultiagentSystem
 from goldenrockefeller.policyopt.evolution import DefaultEvolvingSystem, DefaultPhenotype
-from goldenrockefeller.policyopt.neural_network import TanhLayer, ReluLinear, Rbfn
+from goldenrockefeller.policyopt.neural_network import TanhLayer, ReluLinear
 
 from goldenrockefeller.policyopt.function_approximation import DifferentiableFunctionApproximator
 
@@ -19,22 +19,9 @@ from goldenrockefeller.cyutil.array import DoubleArray
 
 from cmaes import CmaesSystem
 
-from gru_fitness_critic import SumGruCriticSystem, FinalGruCriticSystem, GruApproximator
-from gru_fitness_critic import RecordingSumGruCriticSystem, RecordingFinalGruCriticSystem, GruApproximator
-
-from relu_critic import ReluNetworkApproximator, ReluFitnessCriticSystem
 
 from flat_critic import NFlatNetwork
-from flat_critic import FlatFitnessCriticSystem
-from flat_critic import MonteFlatFitnessCriticSystem
-from flat_critic import DiscountFlatFitnessCriticSystem
-# from flat_critic import UqFlatNetworkApproximator
-# from flat_critic import UFlatNetworkApproximator
-# from flat_critic import QFlatNetworkApproximator
-from flat_critic import MonteFlatNetworkApproximator
-from flat_critic import FlatNetworkApproximator
-from flat_critic import DiscountFlatNetworkApproximator
-
+from flat_critic import FlatFitnessCriticSystem, MonteFlatFitnessCriticSystem
 # from mlp import TorchMlp
 
 # from rbfn_approximator import RbfnApproximator
@@ -47,9 +34,6 @@ from trial_rover_domain import TrialRoverDomain
 from cauchy_phenotype import CauchyPhenotype
 
 from mean_fitness_critic import MeanFitnessCriticSystem, MonteFitnessCriticSystem
-from mean_fitness_critic import TrajFitnessCriticSystem, RecordingTrajFitnessCriticSystem
-from mean_fitness_critic import AlternatingTrajFitnessCriticSystem
-from mean_fitness_critic import RecordingMeanFitnessCriticSystem
 
 import numpy as np
 
@@ -70,7 +54,38 @@ def difference_reward(arg_dict):
     evaluator.set_n_req(old_evaluator.n_req())
     evaluator.set_capture_dist(old_evaluator.capture_dist())
 
-def flat_critic_6_etb(arg_dict):
+
+# def flat_critic_raw(arg_dict):
+#     multiagent_system = arg_dict["trial"].system
+#
+#     agent_systems = multiagent_system.agent_systems()
+#
+#     for rover_id in range(len(agent_systems)):
+#         evolving_system = agent_systems[rover_id]
+#
+#         fitness_critic_system = (
+#             FlatFitnessCriticSystem(
+#                 evolving_system, 10, 80 ))
+#
+#         intermediate_critic = fitness_critic_system.intermediate_critic()
+#
+#         intermediate_critic.learning_rate = 1e-4
+#         intermediate_critic.using_conditioner = False
+#         intermediate_critic.using_accelerator = False
+#         intermediate_critic.using_grad_disturber = False
+#         intermediate_critic.flat_network.leaky_scale = 0.01
+#         intermediate_critic.conditioner.time_horizon = 5000.
+#         intermediate_critic.accelerator.time_horizon = 5000.
+#         intermediate_critic.grad_disturber.disturbance_factor = 0.
+#
+#         fitness_critic_system.trajectory_buffer().set_capacity(100)
+#         fitness_critic_system.experience_target_buffer.set_capacity(5000)
+#         fitness_critic_system.n_critic_updates_per_epoch = 5000
+#
+#         agent_systems[rover_id] = fitness_critic_system
+
+
+def flat_critic_reg(arg_dict):
     multiagent_system = arg_dict["trial"].system
 
     agent_systems = multiagent_system.agent_systems()
@@ -84,49 +99,140 @@ def flat_critic_6_etb(arg_dict):
 
         intermediate_critic = fitness_critic_system.intermediate_critic()
 
-        intermediate_critic.learning_rate = 1e-6
 
-        fitness_critic_system.trajectory_buffer().set_capacity(100)
-        fitness_critic_system.experience_target_buffer.set_capacity(5000)
-        #
-        # fitness_critic_system.n_critic_updates_per_epoch = 99
-
-        fitness_critic_system.uses_experience_targets_for_updates = True
-        fitness_critic_system.n_critic_updates_per_epoch = 5000
-
-
-
-        agent_systems[rover_id] = fitness_critic_system
-
-def flat_critic_5_etb(arg_dict):
-    multiagent_system = arg_dict["trial"].system
-
-    agent_systems = multiagent_system.agent_systems()
-
-    for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems[rover_id]
-
-        fitness_critic_system = (
-            FlatFitnessCriticSystem(
-                evolving_system, 10, 80 ))
-
-        intermediate_critic = fitness_critic_system.intermediate_critic()
+        intermediate_critic.flat_network.leaky_scale = 0.5
 
         intermediate_critic.learning_rate = 1e-5
-        intermediate_critic.leaky_scale = 0.01
+        intermediate_critic.using_conditioner = False
+        intermediate_critic.grad_disturbance_factor = 0.0
+        intermediate_critic.momentum_sustain = 0.
+        intermediate_critic.conditioner_time_horizon = 1.
+
 
         fitness_critic_system.trajectory_buffer().set_capacity(100)
         fitness_critic_system.experience_target_buffer.set_capacity(5000)
-        #
-        # fitness_critic_system.n_critic_updates_per_epoch = 99
-
-        fitness_critic_system.uses_experience_targets_for_updates = True
         fitness_critic_system.n_critic_updates_per_epoch = 5000
-
-
 
         agent_systems[rover_id] = fitness_critic_system
 
+def flat_critic_fierce(arg_dict):
+    multiagent_system = arg_dict["trial"].system
+
+    agent_systems = multiagent_system.agent_systems()
+
+    for rover_id in range(len(agent_systems)):
+        evolving_system = agent_systems[rover_id]
+
+        fitness_critic_system = (
+            FlatFitnessCriticSystem(
+                evolving_system, 10, 80 ))
+
+        intermediate_critic = fitness_critic_system.intermediate_critic()
+
+
+        intermediate_critic.flat_network.leaky_scale = 0.5
+
+        intermediate_critic.learning_rate = 0.1
+        intermediate_critic.using_conditioner = True
+        intermediate_critic.grad_disturbance_factor = 0.05
+        intermediate_critic.momentum_sustain = 0.99
+        intermediate_critic.conditioner_time_horizon = 5000.
+
+
+        fitness_critic_system.trajectory_buffer().set_capacity(100)
+        fitness_critic_system.experience_target_buffer.set_capacity(5000)
+        fitness_critic_system.n_critic_updates_per_epoch = 5000
+
+        agent_systems[rover_id] = fitness_critic_system
+
+def monte_flat_critic_reg(arg_dict):
+    multiagent_system = arg_dict["trial"].system
+
+    agent_systems = multiagent_system.agent_systems()
+
+    for rover_id in range(len(agent_systems)):
+        evolving_system = agent_systems[rover_id]
+
+        fitness_critic_system = (
+            MonteFlatFitnessCriticSystem(
+                evolving_system, 10, 80 ))
+
+        intermediate_critic = fitness_critic_system.intermediate_critic()
+
+
+        intermediate_critic.flat_network.leaky_scale = 0.5
+
+        intermediate_critic.learning_rate = 1e-5
+        intermediate_critic.using_conditioner = False
+        intermediate_critic.grad_disturbance_factor = 0.0
+        intermediate_critic.momentum_sustain = 0.
+        intermediate_critic.conditioner_time_horizon = 1.
+
+
+        fitness_critic_system.trajectory_buffer().set_capacity(100)
+        fitness_critic_system.experience_target_buffer.set_capacity(5000)
+        fitness_critic_system.n_critic_updates_per_epoch = 5000
+
+        agent_systems[rover_id] = fitness_critic_system
+
+def monte_flat_critic_fierce(arg_dict):
+    multiagent_system = arg_dict["trial"].system
+
+    agent_systems = multiagent_system.agent_systems()
+
+    for rover_id in range(len(agent_systems)):
+        evolving_system = agent_systems[rover_id]
+
+        fitness_critic_system = (
+            MonteFlatFitnessCriticSystem(
+                evolving_system, 10, 80 ))
+
+        intermediate_critic = fitness_critic_system.intermediate_critic()
+
+
+        intermediate_critic.flat_network.leaky_scale = 0.5
+
+        intermediate_critic.learning_rate = 0.1
+        intermediate_critic.using_conditioner = True
+        intermediate_critic.grad_disturbance_factor = 0.05
+        intermediate_critic.momentum_sustain = 0.99
+        intermediate_critic.conditioner_time_horizon = 5000.
+
+
+        fitness_critic_system.trajectory_buffer().set_capacity(100)
+        fitness_critic_system.experience_target_buffer.set_capacity(5000)
+        fitness_critic_system.n_critic_updates_per_epoch = 5000
+
+        agent_systems[rover_id] = fitness_critic_system
+
+# def flat_critic_fierce(arg_dict):
+#     multiagent_system = arg_dict["trial"].system
+#
+#     agent_systems = multiagent_system.agent_systems()
+#
+#     for rover_id in range(len(agent_systems)):
+#         evolving_system = agent_systems[rover_id]
+#
+#         fitness_critic_system = (
+#             FlatFitnessCriticSystem(
+#                 evolving_system, 10, 80 ))
+#
+#         intermediate_critic = fitness_critic_system.intermediate_critic()
+#
+#         intermediate_critic.learning_rate = 0.001
+#         intermediate_critic.using_conditioner = True
+#         intermediate_critic.using_accelerator = False
+#         intermediate_critic.using_grad_disturber = False
+#         intermediate_critic.flat_network.leaky_scale = 0.5
+#         intermediate_critic.conditioner.time_horizon = 50.
+#         intermediate_critic.accelerator.time_horizon = 50.
+#         intermediate_critic.grad_disturber.disturbance_factor = 0.
+#
+#         fitness_critic_system.trajectory_buffer().set_capacity(100)
+#         fitness_critic_system.experience_target_buffer.set_capacity(5000)
+#         fitness_critic_system.n_critic_updates_per_epoch = 5000
+#
+#         agent_systems[rover_id] = fitness_critic_system
 
 def mean_fitness_critic(arg_dict):
     multiagent_system = arg_dict["trial"].system
@@ -260,115 +366,3 @@ def monte_fitness_critic_flat(arg_dict):
 
 
 
-
-def monte_flat_critic_4_etb(arg_dict):
-    multiagent_system = arg_dict["trial"].system
-
-    agent_systems = multiagent_system.agent_systems()
-
-    for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems[rover_id]
-
-        fitness_critic_system = (
-            MonteFlatFitnessCriticSystem(
-                evolving_system, 10, 80 ))
-
-        intermediate_critic = fitness_critic_system.intermediate_critic()
-
-        intermediate_critic.learning_rate = 1e-4
-
-        fitness_critic_system.trajectory_buffer().set_capacity(100)
-        fitness_critic_system.experience_target_buffer.set_capacity(5000)
-        #
-        # fitness_critic_system.n_critic_updates_per_epoch = 99
-
-        fitness_critic_system.uses_experience_targets_for_updates = True
-        fitness_critic_system.n_critic_updates_per_epoch = 5000
-
-
-
-        agent_systems[rover_id] = fitness_critic_system
-
-
-def monte_flat_critic_5_etb(arg_dict):
-    multiagent_system = arg_dict["trial"].system
-
-    agent_systems = multiagent_system.agent_systems()
-
-    for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems[rover_id]
-
-        fitness_critic_system = (
-            MonteFlatFitnessCriticSystem(
-                evolving_system, 10, 80 ))
-
-        intermediate_critic = fitness_critic_system.intermediate_critic()
-
-        intermediate_critic.learning_rate = 1e-5
-
-        fitness_critic_system.trajectory_buffer().set_capacity(100)
-        fitness_critic_system.experience_target_buffer.set_capacity(5000)
-        #
-        # fitness_critic_system.n_critic_updates_per_epoch = 99
-
-        fitness_critic_system.uses_experience_targets_for_updates = True
-        fitness_critic_system.n_critic_updates_per_epoch = 5000
-
-
-        agent_systems[rover_id] = fitness_critic_system
-
-def discount_flat_critic_5_etb(arg_dict):
-    multiagent_system = arg_dict["trial"].system
-
-    agent_systems = multiagent_system.agent_systems()
-
-    for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems[rover_id]
-
-        fitness_critic_system = (
-            DiscountFlatFitnessCriticSystem(
-                evolving_system, 10, 80 ))
-
-        intermediate_critic = fitness_critic_system.intermediate_critic()
-
-        intermediate_critic.learning_rate = 1e-5
-
-        fitness_critic_system.trajectory_buffer().set_capacity(1)
-        fitness_critic_system.experience_target_buffer.set_capacity(5000)
-        #
-        # fitness_critic_system.n_critic_updates_per_epoch = 99
-
-        fitness_critic_system.uses_experience_targets_for_updates = True
-        fitness_critic_system.n_critic_updates_per_epoch = 5000
-
-
-        agent_systems[rover_id] = fitness_critic_system
-
-
-def discount_flat_critic_5_etb(arg_dict):
-    multiagent_system = arg_dict["trial"].system
-
-    agent_systems = multiagent_system.agent_systems()
-
-    for rover_id in range(len(agent_systems)):
-        evolving_system = agent_systems[rover_id]
-
-        fitness_critic_system = (
-            DiscountFlatFitnessCriticSystem(
-                evolving_system, 10, 80 ))
-
-        intermediate_critic = fitness_critic_system.intermediate_critic()
-
-        intermediate_critic.learning_rate = 1e-5
-
-        fitness_critic_system.trajectory_buffer().set_capacity(100)
-        fitness_critic_system.experience_target_buffer.set_capacity(5000)
-        #
-        # fitness_critic_system.n_critic_updates_per_epoch = 99
-
-        fitness_critic_system.uses_experience_targets_for_updates = True
-        fitness_critic_system.n_critic_updates_per_epoch = 5000
-
-
-
-        agent_systems[rover_id] = fitness_critic_system

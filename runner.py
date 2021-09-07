@@ -22,39 +22,10 @@ from goldenrockefeller.roverdomain.evaluator import DifferenceEvaluator
 
 from goldenrockefeller.policyopt.map import DifferentiableCriticMap
 from goldenrockefeller.policyopt.fitness_critic import FitnessCriticSystem
-# from goldenrockefeller.policyopt.value_target import TdLambdaTargetSetter
 
 from goldenrockefeller.cyutil.array import DoubleArray
 
-from cmaes import CmaesSystem
-
-from gru_fitness_critic import SumGruCriticSystem, FinalGruCriticSystem, GruApproximator
-from gru_fitness_critic import RecordingSumGruCriticSystem, RecordingFinalGruCriticSystem, GruApproximator
-
-from relu_critic import ReluNetworkApproximator, ReluFitnessCriticSystem
-
-from flat_critic import FlatFitnessCriticSystem
-# from flat_critic import UqFlatNetworkApproximator
-# from flat_critic import UFlatNetworkApproximator
-# from flat_critic import QFlatNetworkApproximator
-from flat_critic import MonteFlatNetworkApproximator
-from flat_critic import FlatNetworkApproximator
-
-# from mlp import TorchMlp
-
-# from rbfn_approximator import RbfnApproximator
-
-# from novelty import EvolvingSystemWithNoveltySearch
-# from novelty import PhenotypeWithNoveltyScore
-
 from trial_rover_domain import TrialRoverDomain
-
-from cauchy_phenotype import CauchyPhenotype
-
-from mean_fitness_critic import MeanFitnessCriticSystem
-from mean_fitness_critic import TrajFitnessCriticSystem, RecordingTrajFitnessCriticSystem
-from mean_fitness_critic import AlternatingTrajFitnessCriticSystem
-from mean_fitness_critic import RecordingMeanFitnessCriticSystem
 
 import numpy as np
 

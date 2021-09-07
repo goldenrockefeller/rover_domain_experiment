@@ -3,7 +3,6 @@
 #include <vector>
 #include <sstream>
 #include <exception>
-#include <random>
 
 
 using std::valarray;
@@ -20,6 +19,7 @@ using std::invalid_argument;
 using std::runtime_error;
 using std::make_shared;
 using std::sqrt;
+using std::function;
 
 
 namespace goldenrockefeller {
@@ -334,7 +334,15 @@ namespace goldenrockefeller {
 			shared_ptr<FlatNetwork> flat_network
 		) :
 			learning_rate(0.5),
-			flat_network(flat_network)
+			flat_network(flat_network),
+			gen(std::random_device()()),
+			grad_disturbance_factor(0.),
+			momentum_sustain(0.),
+			momentum(0., flat_network->n_parameters()),
+			pressures(0., flat_network->n_parameters()),
+			eps(1.e-9),
+			using_conditioner(false),
+			conditioner_time_horizon(1.)
 		{}
 
 		FlatNetworkApproximator::FlatNetworkApproximator(std::size_t n_in_dims, std::size_t n_hidden_units) :
@@ -361,6 +369,17 @@ namespace goldenrockefeller {
 		}
 
 		double FlatNetworkApproximator::eval(const Experience& input) const {
+			if (input.observation.size() + input.action.size() != this->flat_network->n_in_dims()) {
+				ostringstream msg;
+				msg << "The sum of experience's observation size (input.observation.size() = "
+					<< input.observation.size() 
+					<< ") and the experience's action size (input.action.size() = "
+					<< input.action.size() 
+					<< ") must be equal to the number of input dimensions for the approximator  (this->flat_network->n_in_dims() = "
+					<< this->flat_network->n_in_dims()
+					<< ").";
+				throw invalid_argument(msg.str());	
+			}
 			return this->flat_network->eval(concatenate(input.observation, input.action));
 		}
 
@@ -368,6 +387,59 @@ namespace goldenrockefeller {
 			return this->flat_network->grad_wrt_parameters(concatenate(input.observation, input.action), output_grad);
 		}
 
+
+		void FlatNetworkApproximator::update(const Experience& experience, double target_value) {
+			if (experience.observation.size() + experience.action.size() != this->flat_network->n_in_dims()) {
+				ostringstream msg;
+				msg << "The sum of experience's observation size (input.observation.size() = "
+					<< experience.observation.size() 
+					<< ") and the experience's action size (input.action.size() = "
+					<< experience.action.size() 
+					<< ") must be equal to the number of input dimensions for the approximator  (this->flat_network->n_in_dims() = "
+					<< this->flat_network->n_in_dims()
+					<< ").";
+				throw invalid_argument(msg.str());	
+			}
+			
+
+			// Project parameters using momentum according to Nesterov accelerated gradient method.
+			valarray<double> projected_parameters = this->parameters() + this->momentum;
+			this->set_parameters(projected_parameters);
+
+			// Get error with projected parameters.
+			double eval = this->eval(experience);
+			double error = target_value - eval;
+
+			// Get raw gradient w.r.t. parametetrs using projected parameters.
+			valarray<double> raw_grad = this->grad_wrt_parameters(experience, 1.);
+
+			// Condition raw gradient.
+			if (this->using_conditioner) {
+				this->pressures += raw_grad * raw_grad;
+				raw_grad /= (this->pressures + this->eps );
+				this->pressures *= 1. - 1./this->conditioner_time_horizon;
+			}
+
+			valarray<double> true_grad = raw_grad * error;
+
+			// Apply and update momentum and true gradient.
+			valarray<double> post_update_parameters = this->parameters() + this->learning_rate * (this->momentum + true_grad);
+			if (grad_disturbance_factor != 0.0) {
+				valarray<double> grad_disturbance(0., post_update_parameters.size());
+				std::uniform_real_distribution<> distrib(-this->grad_disturbance_factor, 0.);
+				for (double& val : grad_disturbance) {
+					val = distrib(gen);
+				}
+				post_update_parameters += this->learning_rate * true_grad * distrib(gen);
+			}
+			this->momentum += true_grad;
+			this->momentum *= this->momentum_sustain;
+
+			this->set_parameters(post_update_parameters);
+		}
+
+
+/***
 		void FlatNetworkApproximator::update(const std::vector<Experience>& experiences) {
 			double sample_fitness = 0.;
 			double traj_eval = 0.;
@@ -393,18 +465,9 @@ namespace goldenrockefeller {
 			this->set_parameters(parameters + delta_parameters);
 			
 		}
+***/
 
-		void FlatNetworkApproximator::update(const Experience& experience, double target_value) {
-			double eval = this->eval(experience);
-
-			double error = target_value - eval;
-
-			valarray<double> grad = this->grad_wrt_parameters(experience, error);
-			valarray<double> delta_parameters = grad * this->learning_rate;
-
-			this->set_parameters(this->parameters() + delta_parameters);
-		}
-
+/**
 		MonteFlatNetworkApproximator* MonteFlatNetworkApproximator::copy_impl() const {
 			return new MonteFlatNetworkApproximator(move(this->flat_network->copy()));
 		}
@@ -606,6 +669,6 @@ namespace goldenrockefeller {
 			this->u_approximator->update(experiences);
 			this->q_approximator->update(experiences);
 		}
-
+**/
 	} // namespace policyopt
 } // namespace goldenrockefeller

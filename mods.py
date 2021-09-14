@@ -109,7 +109,7 @@ def flat_critic_zero(arg_dict):
         approximator.momentum_sustain = 0.
         approximator.conditioner_time_horizon = 1.
 
-\
+
         fitness_critic_system.experience_target_buffer.set_capacity(5000)
         fitness_critic_system.n_critic_updates_per_epoch = 5000
 
@@ -138,7 +138,7 @@ def flat_critic_reg(arg_dict):
         approximator.momentum_sustain = 0.
         approximator.conditioner_time_horizon = 1.
 
-\
+
         fitness_critic_system.experience_target_buffer.set_capacity(5000)
         fitness_critic_system.n_critic_updates_per_epoch = 5000
 

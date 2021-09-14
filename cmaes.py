@@ -3,39 +3,39 @@ import numpy as np
 from goldenrockefeller.cyutil.array import DoubleArray
 import random
 
+# TODO Covariance update (wikipedia)
+
 def ndarray_from_DoubleArray(d_arr):
     return np.asarray(d_arr.view).copy()
 
 class CmaesSystem(BaseEvolvingSystem):
-    def __init__(self, n_parameters = 1):
+    def __init__(self, n_parameters = 1, slow_down = 1):
         BaseEvolvingSystem.__init__(self)
+
+
         self.step_size = 1.
-        self._slow_down = 1.
-        CmaesSystem.reinit_system(self, n_parameters)
+        self.mean = np.zeros(n_parameters)
 
-
-    @staticmethod
-    def reinit_system(system, n_parameters):
-        slow_down = system._slow_down
-
-        system.mean = np.zeros(n_parameters)
-
-        system.covariance = np.ones(n_parameters)
-        system.isotropic_path = np.zeros(n_parameters)
-        system.anisotropic_path = np.zeros(n_parameters)
-        system.epsilon = 1.e-9
+        self.covariance = np.ones(n_parameters)
+        self.isotropic_path = np.zeros(n_parameters)
+        self.anisotropic_path = np.zeros(n_parameters)
+        self.epsilon = 1.e-9
 
         # learning rates (lr)
-        system.mean_lr = 1. / slow_down
-        system.isotropic_lr = 1. / (1. + n_parameters/3.) / slow_down
-        system.anisotropic_lr = 1. / (1. + n_parameters/4.) / slow_down
-        system.covariance_path_lr = 1. / (2. + n_parameters**2/2.) / slow_down
-        system.step_size_damping = 1.
+        self.mean_lr = 1. /  (1. + n_parameters/3.) / slow_down
 
-        system.expected_step_size = (
-            np.sqrt(n_parameters)
-            * (1 - 1/(4*n_parameters) + 1 / (21 * n_parameters ** 2))
-        )
+        # self.isotropic_lr = 1. / (1. + n_parameters/3.) / slow_down
+        # self.step_size_damping = 1.
+        #
+
+
+        self.anisotropic_lr = 1. / (1. + n_parameters/4.) / slow_down
+        self.covariance_path_lr = 1. /  (1. + n_parameters/3.) / slow_down
+
+        # self.expected_step_size = (
+        #     np.sqrt(n_parameters)
+        #     * (1 - 1/(4*n_parameters) + 1 / (21 * n_parameters ** 2))
+        # )
 
     def copy(self, copy_obj = None):
         raise NotImplementedError("Not implemented yet.")
@@ -54,9 +54,6 @@ class CmaesSystem(BaseEvolvingSystem):
 
         new_n_parameters = phenotypes[0].policy().n_parameters()
 
-        if n_parameters != new_n_parameters:
-            CmaesSystem.reinit_system(self, new_n_parameters)
-            n_parameters = new_n_parameters
 
         n_phenotypes = len(phenotypes)
         n_kept_phenotypes =  n_phenotypes // 4
@@ -68,7 +65,7 @@ class CmaesSystem(BaseEvolvingSystem):
         selection_mass = 1. / (weights ** 2).sum()
 
         covariance_paramaters_lr = (
-            1. / (2. + n_parameters**2/selection_mass) / self._slow_down
+            selection_mass * 0.5 * self.covariance_path_lr
         )
 
         prev_mean = self.mean.copy()
@@ -89,27 +86,27 @@ class CmaesSystem(BaseEvolvingSystem):
             displacement += weight * (parameter_vector - prev_mean)
 
         self.mean += self.mean_lr * displacement
-
-        self.isotropic_path = (
-            (1. - self.isotropic_lr) * self.isotropic_path
-            + np.sqrt(1 - (1. - self.isotropic_lr) ** 2)
-            * np.sqrt(selection_mass)
-            * displacement
-            / (prev_step_size * np.sqrt(self.covariance) + self.epsilon)
-        )
-
-        self.step_size = (
-            prev_step_size
-            * np.exp(
-                self.isotropic_lr / self.step_size_damping
-                * (
-                    np.linalg.norm(self.isotropic_path)
-                    / self.expected_step_size
-                    - 1.
-                )
-            )
-        )
-
+        #
+        # self.isotropic_path = (
+        #     (1. - self.isotropic_lr) * self.isotropic_path
+        #     + np.sqrt(1 - (1. - self.isotropic_lr) ** 2)
+        #     * np.sqrt(selection_mass)
+        #     * displacement
+        #     / (prev_step_size * np.sqrt(self.covariance) + self.epsilon)
+        # )
+        #
+        # self.step_size = (
+        #     prev_step_size
+        #     * np.exp(
+        #         self.isotropic_lr / self.step_size_damping
+        #         * (
+        #             np.linalg.norm(self.isotropic_path)
+        #             / self.expected_step_size
+        #             - 1.
+        #         )
+        #     )
+        # )
+        #
         self.anisotropic_path = (
             (1. - self.anisotropic_lr) * self.anisotropic_path
             + np.sqrt(1 - (1. - self.anisotropic_lr) ** 2)

@@ -86,6 +86,35 @@ def difference_reward(arg_dict):
 #         agent_systems[rover_id] = fitness_critic_system
 
 
+def flat_critic_zero(arg_dict):
+    multiagent_system = arg_dict["trial"].system
+
+    agent_systems = multiagent_system.agent_systems()
+
+    for rover_id in range(len(agent_systems)):
+        evolving_system = agent_systems[rover_id]
+
+        fitness_critic_system = (
+            FlatFitnessCriticSystem(
+                evolving_system, 10, 80 ))
+
+        approximator = fitness_critic_system.approximator
+
+
+        approximator.flat_network.leaky_scale = 0.5
+
+        approximator.learning_rate = 0.0
+        approximator.using_conditioner = False
+        approximator.grad_disturbance_factor = 0.0
+        approximator.momentum_sustain = 0.
+        approximator.conditioner_time_horizon = 1.
+
+\
+        fitness_critic_system.experience_target_buffer.set_capacity(5000)
+        fitness_critic_system.n_critic_updates_per_epoch = 5000
+
+        agent_systems[rover_id] = fitness_critic_system
+
 def flat_critic_reg(arg_dict):
     multiagent_system = arg_dict["trial"].system
 
@@ -98,19 +127,18 @@ def flat_critic_reg(arg_dict):
             FlatFitnessCriticSystem(
                 evolving_system, 10, 80 ))
 
-        intermediate_critic = fitness_critic_system.intermediate_critic()
+        approximator = fitness_critic_system.approximator
 
 
-        intermediate_critic.flat_network.leaky_scale = 0.5
+        approximator.flat_network.leaky_scale = 0.5
 
-        intermediate_critic.learning_rate = 1e-5
-        intermediate_critic.using_conditioner = False
-        intermediate_critic.grad_disturbance_factor = 0.0
-        intermediate_critic.momentum_sustain = 0.
-        intermediate_critic.conditioner_time_horizon = 1.
+        approximator.learning_rate = 1e-5
+        approximator.using_conditioner = False
+        approximator.grad_disturbance_factor = 0.0
+        approximator.momentum_sustain = 0.
+        approximator.conditioner_time_horizon = 1.
 
-
-        fitness_critic_system.trajectory_buffer().set_capacity(100)
+\
         fitness_critic_system.experience_target_buffer.set_capacity(5000)
         fitness_critic_system.n_critic_updates_per_epoch = 5000
 
@@ -140,7 +168,6 @@ def flat_critic_fierce(arg_dict):
         approximator.conditioner_time_horizon = 5000.
 
 
-        fitness_critic_system.trajectory_buffer().set_capacity(100)
         fitness_critic_system.experience_target_buffer.set_capacity(5000)
         fitness_critic_system.n_critic_updates_per_epoch = 5000
 
@@ -287,18 +314,17 @@ def monte_flat_critic_fierce(arg_dict):
 #             FlatFitnessCriticSystem(
 #                 evolving_system, 10, 80 ))
 #
-#         intermediate_critic = fitness_critic_system.intermediate_critic()
+#         approximator = fitness_critic_system.approximator
 #
-#         intermediate_critic.learning_rate = 0.001
-#         intermediate_critic.using_conditioner = True
-#         intermediate_critic.using_accelerator = False
-#         intermediate_critic.using_grad_disturber = False
-#         intermediate_critic.flat_network.leaky_scale = 0.5
-#         intermediate_critic.conditioner.time_horizon = 50.
-#         intermediate_critic.accelerator.time_horizon = 50.
-#         intermediate_critic.grad_disturber.disturbance_factor = 0.
+#         approximator.learning_rate = 0.001
+#         approximator.using_conditioner = True
+#         approximator.using_accelerator = False
+#         approximator.using_grad_disturber = False
+#         approximator.flat_network.leaky_scale = 0.5
+#         approximator.conditioner.time_horizon = 50.
+#         approximator.accelerator.time_horizon = 50.
+#         approximator.grad_disturber.disturbance_factor = 0.
 #
-#         fitness_critic_system.trajectory_buffer().set_capacity(100)
 #         fitness_critic_system.experience_target_buffer.set_capacity(5000)
 #         fitness_critic_system.n_critic_updates_per_epoch = 5000
 #

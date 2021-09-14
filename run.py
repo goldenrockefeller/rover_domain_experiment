@@ -18,7 +18,7 @@ def run():
 
     mods_to_mix = [
         (global_reward,),
-        (uq_flat_critic_reg, flat_critic_reg, q_flat_critic_reg)
+        (uq_flat_critic_reg, flat_critic_zero, q_flat_critic_reg, flat_critic_zero)
     ]
 
 

@@ -196,7 +196,7 @@ def stepped_uq_flat_critic_reg(arg_dict):
 
             approximator.flat_network.leaky_scale = 0.5
 
-            approximator.learning_rate = 1e-5
+            approximator.learning_rate = 1e-3
             approximator.using_conditioner = False
             approximator.grad_disturbance_factor = 0.0
             approximator.momentum_sustain = 0.
@@ -206,7 +206,7 @@ def stepped_uq_flat_critic_reg(arg_dict):
 
             approximator.flat_network.leaky_scale = 0.5
 
-            approximator.learning_rate = 1e-5
+            approximator.learning_rate = 1e-3
             approximator.using_conditioner = False
             approximator.grad_disturbance_factor = 0.0
             approximator.momentum_sustain = 0.
@@ -241,7 +241,7 @@ def stepped_q_flat_critic_reg(arg_dict):
 
             approximator.flat_network.leaky_scale = 0.5
 
-            approximator.learning_rate = 1e-5
+            approximator.learning_rate = 1e-3
             approximator.using_conditioner = False
             approximator.grad_disturbance_factor = 0.0
             approximator.momentum_sustain = 0.
@@ -255,7 +255,7 @@ def stepped_q_flat_critic_reg(arg_dict):
 
         agent_systems[rover_id] = fitness_critic_system
 
-def stepped_flat_critic_reg(arg_dict):
+def stepped_flat_critic_reg_fast(arg_dict):
     multiagent_system = arg_dict["trial"].system
 
     agent_systems = multiagent_system.agent_systems()
@@ -271,7 +271,7 @@ def stepped_flat_critic_reg(arg_dict):
 
             approximator.flat_network.leaky_scale = 0.5
 
-            approximator.learning_rate = 1e-4
+            approximator.learning_rate = 1e-3
             approximator.using_conditioner = False
             approximator.grad_disturbance_factor = 0.0
             approximator.momentum_sustain = 0.

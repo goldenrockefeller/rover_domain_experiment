@@ -410,124 +410,6 @@ cdef class FlatFitnessCriticSystem(BaseCriticSystem):
         system = self.super_system()
         system.prep_for_epoch()
 
-
-cdef class SteppedFlatFitnessCriticSystem(BaseCriticSystem):
-    cdef public Py_ssize_t n_critic_updates_per_epoch
-    cdef public list experience_target_buffers
-    cdef public list approximators
-    cdef public Py_ssize_t n_steps
-
-    def __init__(
-            self,
-            BaseSystem super_system,
-            size_t n_in_dims, size_t n_hidden_units, Py_ssize_t n_steps):
-        self.approximators = [FlatNetworkApproximator(n_in_dims, n_hidden_units) for _ in range(n_steps)]
-        self.n_critic_updates_per_epoch = 1
-        self.experience_target_buffers = [new_ShuffleBuffer()  for _ in range(n_steps)]
-        self.n_steps = n_steps
-        BaseCriticSystem.__init__(self, super_system)
-
-
-    #step_wise feedback
-    cpdef void receive_feedback(self, feedback) except *:
-        cdef ExperienceDatum experience
-        cdef double new_feedback
-        cdef FlatNetworkApproximator approximator
-        cdef list current_trajectory
-        cdef Py_ssize_t step_id
-
-
-        experience = new_ExperienceDatum()
-        experience.observation = self.current_observation()
-        experience.action = self.current_action()
-        experience.reward = feedback
-
-        step_id = len(self.current_trajectory())
-
-        self.current_trajectory().append(experience)
-
-        approximator = self.approximators[step_id]
-
-        new_feedback = approximator.eval(experience)
-        #
-        #
-        # # if not isfinite(new_feedback):
-        # #     raise RuntimeError("Something went wrong: feedback is not finite.")
-        #
-        self.super_system().receive_feedback(new_feedback)
-
-    cpdef void update_policy(self) except *:
-        cdef list current_trajectory = self.current_trajectory()
-        self.extract_experience_targets(current_trajectory)
-        self.super_system().update_policy()
-        self._set_current_trajectory([])
-
-
-    cpdef void extract_experience_targets(self, list trajectory) except *:
-        cdef ExperienceDatum experience
-        cdef double traj_eval
-        cdef double step_eval
-        cdef double sample_fitness
-        cdef FlatNetworkApproximator approximator
-        cdef double error
-        cdef TargetEntry target_entry
-        cdef Py_ssize_t traj_len = len(trajectory)
-        cdef Py_ssize_t step_id
-        cdef ShuffleBuffer experience_target_buffer
-
-        sample_fitness = 0.
-        traj_eval = 0.
-
-        step_id = 0
-        for experience in trajectory:
-            sample_fitness += experience.reward
-            approximator = self.approximators[step_id]
-            traj_eval += approximator.eval(experience)
-            step_id += 1
-
-        traj_eval /= traj_len
-
-        error = sample_fitness - traj_eval
-
-        step_id = 0
-        for experience in trajectory:
-            approximator = self.approximators[step_id]
-            step_eval = approximator.eval(experience)
-            target_entry = new_TargetEntry()
-            target_entry.input = experience
-            target_entry.target = error + step_eval
-            experience_target_buffer = self.experience_target_buffers[step_id]
-            experience_target_buffer.add_staged_datum(target_entry)
-            step_id += 1
-
-
-    cpdef void prep_for_epoch(self) except *:
-        cdef Py_ssize_t update_id
-        cdef BaseSystem system
-        cdef FlatNetworkApproximator approximator
-        cdef list trajectory
-        cdef Py_ssize_t n_updates = self.n_critic_updates_per_epoch
-        cdef TargetEntry target_entry
-        cdef Py_ssize_t step_id
-        cdef ShuffleBuffer experience_target_buffer
-
-        for step_id in range(self.n_steps):
-            experience_target_buffer = self.experience_target_buffers[step_id]
-            approximator = self.approximators[step_id]
-            if not experience_target_buffer.is_empty():
-                for update_id in range(n_updates):
-                    target_entry = experience_target_buffer.next_shuffled_datum()
-                    approximator.update_using_experience(target_entry.input, target_entry.target)
-
-            # raise ValueError()
-            # trajectory = self._trajectory_buffer.next_shuffled_datum()
-            # print(approximator.eval(target_entry.input))
-            # sys.stdout.flush()
-            # raise ValueError()
-            # print(len(trajectory))
-        system = self.super_system()
-        system.prep_for_epoch()
-
 cdef class MonteFlatFitnessCriticSystem(FlatFitnessCriticSystem):
 
     cpdef void extract_experience_targets(self, list trajectory) except *:
@@ -717,6 +599,323 @@ cdef class UqFlatFitnessCriticSystem(BaseCriticSystem):
             # print(len(trajectory))
         system = self.super_system()
         system.prep_for_epoch()
+
+
+
+
+cdef class SteppedFlatFitnessCriticSystem(BaseCriticSystem):
+    cdef public Py_ssize_t n_critic_updates_per_epoch
+    cdef public list experience_target_buffers
+    cdef public list approximators
+    cdef public Py_ssize_t n_steps
+
+    def __init__(
+            self,
+            BaseSystem super_system,
+            size_t n_in_dims, size_t n_hidden_units, Py_ssize_t n_steps):
+        self.approximators = [FlatNetworkApproximator(n_in_dims, n_hidden_units) for _ in range(n_steps)]
+        self.n_critic_updates_per_epoch = 1
+        self.experience_target_buffers = [new_ShuffleBuffer()  for _ in range(n_steps)]
+        self.n_steps = n_steps
+        BaseCriticSystem.__init__(self, super_system)
+
+
+    #step_wise feedback
+    cpdef void receive_feedback(self, feedback) except *:
+        cdef ExperienceDatum experience
+        cdef double new_feedback
+        cdef FlatNetworkApproximator approximator
+        cdef list current_trajectory
+        cdef Py_ssize_t step_id
+
+
+        experience = new_ExperienceDatum()
+        experience.observation = self.current_observation()
+        experience.action = self.current_action()
+        experience.reward = feedback
+
+        step_id = len(self.current_trajectory())
+
+        self.current_trajectory().append(experience)
+
+        approximator = self.approximators[step_id]
+
+        new_feedback = approximator.eval(experience)
+        #
+        #
+        # # if not isfinite(new_feedback):
+        # #     raise RuntimeError("Something went wrong: feedback is not finite.")
+        #
+        self.super_system().receive_feedback(new_feedback)
+
+    cpdef void update_policy(self) except *:
+        cdef list current_trajectory = self.current_trajectory()
+        self.extract_experience_targets(current_trajectory)
+        self.super_system().update_policy()
+        self._set_current_trajectory([])
+
+
+    cpdef void extract_experience_targets(self, list trajectory) except *:
+        cdef ExperienceDatum experience
+        cdef double traj_eval
+        cdef double step_eval
+        cdef double sample_fitness
+        cdef FlatNetworkApproximator approximator
+        cdef double error
+        cdef TargetEntry target_entry
+        cdef Py_ssize_t traj_len = len(trajectory)
+        cdef Py_ssize_t step_id
+        cdef ShuffleBuffer experience_target_buffer
+
+        sample_fitness = 0.
+        traj_eval = 0.
+
+        step_id = 0
+        for experience in trajectory:
+            sample_fitness += experience.reward
+            approximator = self.approximators[step_id]
+            traj_eval += approximator.eval(experience)
+            step_id += 1
+
+        traj_eval /= traj_len
+
+        error = sample_fitness - traj_eval
+
+        step_id = 0
+        for experience in trajectory:
+            approximator = self.approximators[step_id]
+            step_eval = approximator.eval(experience)
+            target_entry = new_TargetEntry()
+            target_entry.input = experience
+            target_entry.target = error + step_eval
+            experience_target_buffer = self.experience_target_buffers[step_id]
+            experience_target_buffer.add_staged_datum(target_entry)
+            step_id += 1
+
+
+    cpdef void prep_for_epoch(self) except *:
+        cdef Py_ssize_t update_id
+        cdef BaseSystem system
+        cdef FlatNetworkApproximator approximator
+        cdef list trajectory
+        cdef Py_ssize_t n_updates = self.n_critic_updates_per_epoch
+        cdef TargetEntry target_entry
+        cdef Py_ssize_t step_id
+        cdef ShuffleBuffer experience_target_buffer
+
+        for step_id in range(self.n_steps):
+            experience_target_buffer = self.experience_target_buffers[step_id]
+            approximator = self.approximators[step_id]
+            if not experience_target_buffer.is_empty():
+                for update_id in range(n_updates):
+                    target_entry = experience_target_buffer.next_shuffled_datum()
+                    approximator.update_using_experience(target_entry.input, target_entry.target)
+
+            # raise ValueError()
+            # trajectory = self._trajectory_buffer.next_shuffled_datum()
+            # print(approximator.eval(target_entry.input))
+            # sys.stdout.flush()
+            # raise ValueError()
+            # print(len(trajectory))
+        system = self.super_system()
+        system.prep_for_epoch()
+
+
+cdef class SteppedQFlatFitnessCriticSystem(SteppedFlatFitnessCriticSystem):
+    cpdef void extract_experience_targets(self, list trajectory) except *:
+        stepped_q_extract_experience_targets(trajectory, self.experience_target_buffers, self.approximators)
+
+
+cpdef void stepped_q_extract_experience_targets(list trajectory, list experience_target_buffers, list approximators) except *:
+        cdef ExperienceDatum experience
+        cdef ExperienceDatum next_experience
+        cdef TargetEntry target_entry
+        cdef double reward
+        cdef double next_q
+        cdef Py_ssize_t step_id
+        cdef Py_ssize_t n_steps
+        cdef ShuffleBuffer experience_target_buffer
+        cdef BaseFunctionApproximator approximator
+
+        n_steps = len(trajectory)
+
+
+        # Set Q value target for the last step in the trajectory.
+        experience = trajectory[-1]
+        experience_target_buffer = experience_target_buffers[-1]
+        reward = experience.reward
+
+        target_entry = new_TargetEntry()
+        target_entry.input = experience
+        target_entry.target = experience.reward
+        experience_target_buffer.add_staged_datum(target_entry)
+
+
+        for step_id in range(n_steps - 1):
+            experience = trajectory[step_id]
+            experience_target_buffer = experience_target_buffers[step_id]
+            approximator = approximators[step_id]
+            reward = experience.reward
+
+            next_experience = trajectory[step_id + 1]
+            next_q = approximator.eval(next_experience)
+
+            target_entry = new_TargetEntry()
+            target_entry.input = experience
+            target_entry.target = next_q + reward
+            experience_target_buffer.add_staged_datum(target_entry)
+
+cdef class SteppedUFlatFitnessCriticSystem(SteppedFlatFitnessCriticSystem):
+    cpdef void extract_experience_targets(self, list trajectory) except *:
+        stepped_u_extract_experience_targets(trajectory, self.experience_target_buffers, self.approximators)
+
+cpdef void stepped_u_extract_experience_targets(list trajectory, list experience_target_buffers, list approximators) except *:
+    cdef ExperienceDatum experience
+    cdef ExperienceDatum next_experience
+    cdef TargetEntry target_entry
+    cdef double reward
+    cdef double next_u
+    cdef Py_ssize_t step_id
+    cdef Py_ssize_t n_steps
+    cdef ShuffleBuffer experience_target_buffer
+    cdef BaseFunctionApproximator prev_approximator
+
+    n_steps = len(trajectory)
+
+    # Set U value target for the last step in the trajectory.
+    experience = trajectory[0]
+    experience_target_buffer = experience_target_buffers[0]
+    experience = experience.copy()
+    experience.action = new_DoubleArray(0)
+    reward = 0.
+
+    target_entry = new_TargetEntry()
+    target_entry.input = experience
+    target_entry.target = experience.reward
+    experience_target_buffer.add_staged_datum(target_entry)
+
+
+    for step_id in range(1, n_steps):
+        experience = trajectory[step_id]
+        prev_approximator = approximators[step_id-1]
+        experience_target_buffer = experience_target_buffers[step_id]
+        experience = experience.copy()
+        experience.action = new_DoubleArray(0)
+
+        prev_experience = trajectory[step_id- 1]
+        prev_experience = prev_experience.copy()
+        prev_experience.action = new_DoubleArray(0)
+        prev_reward = prev_experience.reward
+
+        prev_u = prev_approximator.eval(prev_experience)
+
+        target_entry = new_TargetEntry()
+        target_entry.input = experience
+        target_entry.target = prev_u + prev_reward
+        experience_target_buffer.add_staged_datum(target_entry)
+
+cdef class SteppedUqFlatFitnessCriticSystem(BaseCriticSystem):
+    cdef public Py_ssize_t n_critic_updates_per_epoch
+    cdef public list q_experience_target_buffers
+    cdef public list u_experience_target_buffers
+    cdef public list q_approximators
+    cdef public list u_approximators
+    cdef public Py_ssize_t n_steps
+
+    def __init__(
+            self,
+            BaseSystem super_system,
+            size_t n_state_dims, size_t n_action_dims, size_t n_hidden_units, size_t n_steps):
+        self.q_approximators = [FlatNetworkApproximator(n_state_dims + n_action_dims, n_hidden_units) for _ in range(n_steps)]
+        self.u_approximators = [FlatNetworkApproximator(n_state_dims, n_hidden_units) for _ in range(n_steps)]
+        self.n_critic_updates_per_epoch = 1
+        self.q_experience_target_buffers = [new_ShuffleBuffer()  for _ in range(n_steps)]
+        self.u_experience_target_buffers = [new_ShuffleBuffer()  for _ in range(n_steps)]
+        self.n_steps = n_steps
+
+        BaseCriticSystem.__init__(self, super_system)
+
+
+    #step_wise feedback
+    cpdef void receive_feedback(self, feedback) except *:
+        cdef ExperienceDatum experience
+        cdef ExperienceDatum u_experience
+        cdef double new_feedback
+        cdef list current_trajectory
+        cdef FlatNetworkApproximator u_approximator
+        cdef FlatNetworkApproximator q_approximator
+        cdef Py_ssize_t step_id
+
+        experience = new_ExperienceDatum()
+        experience.observation = self.current_observation()
+        experience.action = self.current_action()
+        experience.reward = feedback
+
+        u_experience = experience.copy()
+        u_experience.action = new_DoubleArray(0)
+
+        step_id = len(self.current_trajectory())
+
+        self.current_trajectory().append(experience)
+
+        u_approximator = self.u_approximators[step_id]
+        q_approximator = self.q_approximators[step_id]
+
+        new_feedback = u_approximator.eval(u_experience) + q_approximator.eval(experience)
+        #
+        #
+        # # if not isfinite(new_feedback):
+        # #     raise RuntimeError("Something went wrong: feedback is not finite.")
+        #
+        self.super_system().receive_feedback(new_feedback)
+
+
+    cpdef void update_policy(self) except *:
+        cdef list current_trajectory = self.current_trajectory()
+        self.extract_experience_targets(current_trajectory)
+        self.super_system().update_policy()
+        self._set_current_trajectory([])
+
+
+    cpdef void extract_experience_targets(self, list trajectory) except *:
+        stepped_q_extract_experience_targets(trajectory, self.q_experience_target_buffers, self.q_approximators)
+        stepped_u_extract_experience_targets(trajectory, self.u_experience_target_buffers, self.u_approximators)
+
+    cpdef void prep_for_epoch(self) except *:
+        cdef Py_ssize_t update_id
+        cdef BaseSystem system
+        cdef list trajectory
+        cdef Py_ssize_t n_updates
+        cdef TargetEntry target_entry
+        cdef FlatNetworkApproximator approximator
+        cdef Py_ssize_t step_id
+
+
+        n_updates = self.n_critic_updates_per_epoch
+
+        for step_id in range(self.n_steps):
+            experience_target_buffer = self.q_experience_target_buffers[step_id]
+            approximator = self.q_approximators[step_id]
+            if not experience_target_buffer.is_empty():
+                for update_id in range(n_updates):
+                    target_entry = experience_target_buffer.next_shuffled_datum()
+                    approximator.update_using_experience(target_entry.input, target_entry.target)
+
+            experience_target_buffer = self.u_experience_target_buffers[step_id]
+            approximator = self.u_approximators[step_id]
+            if not experience_target_buffer.is_empty():
+                for update_id in range(n_updates):
+                    target_entry = experience_target_buffer.next_shuffled_datum()
+                    approximator.update_using_experience(target_entry.input, target_entry.target)
+            # raise ValueError()
+            # trajectory = self._trajectory_buffer.next_shuffled_datum()
+            # print(approximator.eval(target_entry.input))
+            # sys.stdout.flush()
+            # raise ValueError()
+            # print(len(trajectory))
+        system = self.super_system()
+        system.prep_for_epoch()
+
 
 
 

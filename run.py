@@ -18,7 +18,7 @@ def run():
 
     mods_to_mix = [
         (global_reward,),
-        (flat_critic_reg, flat_critic_random_grad, flat_critic_conditioned, stepped_flat_critic_reg)
+        (stepped_uq_flat_critic_reg, stepped_q_flat_critic_reg)
     ]
 
 
@@ -36,7 +36,7 @@ def run():
 
 
 if __name__ == '__main__':
-    # r = Runner('test', (global_reward, stepped_flat_critic_reg))
+    # r = Runner('test', (global_reward, stepped_uq_flat_critic_reg))
     # r.new_run()
 
     n_processes = int(sys.argv[1])

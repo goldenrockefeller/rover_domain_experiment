@@ -12,13 +12,13 @@ import signal
 
 def run():
 
-    experiment_name = "15Agents4Poi_nreq_4_redo_BB"
+    experiment_name = "15Agents4Poi_nreq_4_redo_CC"
     n_stats_run_per_process = 1
 
 
     mods_to_mix = [
         (global_reward,),
-        (stepped_uq_flat_critic_reg, stepped_q_flat_critic_reg, stepped_flat_critic_reg_fast)
+        (critic_n(10), critic_n(20), critic_n(40), critic_n(80), critic_n(160), critic_n(400))
     ]
 
 
@@ -36,7 +36,7 @@ def run():
 
 
 if __name__ == '__main__':
-    # r = Runner('test', (global_reward, stepped_uq_flat_critic_reg))
+    # r = Runner('test', (global_reward, critic_n(10)))
     # r.new_run()
 
     n_processes = int(sys.argv[1])

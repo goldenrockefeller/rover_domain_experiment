@@ -89,6 +89,38 @@ def difference_reward(arg_dict):
 #         agent_systems[rover_id] = fitness_critic_system
 
 
+def critic_n(n):
+    def inner_critic_n(arg_dict):
+        multiagent_system = arg_dict["trial"].system
+
+        agent_systems = multiagent_system.agent_systems()
+
+        for rover_id in range(len(agent_systems)):
+            evolving_system = agent_systems[rover_id]
+
+            fitness_critic_system = (
+                FlatFitnessCriticSystem(
+                    evolving_system, 10, n ))
+
+            approximator = fitness_critic_system.approximator
+
+
+            approximator.flat_network.leaky_scale = 0.5
+
+            approximator.learning_rate = 1e-5
+            approximator.using_conditioner = False
+            approximator.grad_disturbance_factor = 0.0
+            approximator.momentum_sustain = 0.
+            approximator.conditioner_time_horizon = 1.
+
+
+            fitness_critic_system.experience_target_buffer.set_capacity(5000)
+            fitness_critic_system.n_critic_updates_per_epoch = 5000
+
+            agent_systems[rover_id] = fitness_critic_system
+    inner_critic_n.__name__ = f"critic_{n}"
+    return inner_critic_n
+
 def flat_critic_random_grad(arg_dict):
     multiagent_system = arg_dict["trial"].system
 

@@ -41,9 +41,6 @@ class CmaesSystem(BaseEvolvingSystem):
         raise NotImplementedError("Not implemented yet.")
 
     def operate(self):
-
-
-
         n_parameters = len(self.mean)
 
         phenotypes = self.phenotypes().copy()
